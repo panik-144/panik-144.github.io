@@ -1,1 +1,51 @@
-Hallo Welt!
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Repository File Tree</title>
+    <style>
+        body { font-family: sans-serif; }
+        ul { list-style-type: none; padding-left: 20px; }
+        li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+
+<h1>📁 File Tree</h1>
+<ul id="file-tree"></ul>
+
+<script>
+async function loadTree(path = "") {
+    const user = "panik-144";
+    const repo = "panik-144.github.io";
+
+    const url = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    const list = document.createElement("ul");
+
+    for (const item of data) {
+        const li = document.createElement("li");
+
+        if (item.type === "file") {
+            li.innerHTML = `<a href="${item.html_url}" target="_blank">${item.name}</a>`;
+        } else if (item.type === "dir") {
+            li.innerHTML = `<strong>${item.name}</strong>`;
+            li.appendChild(await loadTree(item.path));
+        }
+
+        list.appendChild(li);
+    }
+
+    return list;
+}
+
+(async () => {
+    const tree = document.getElementById("file-tree");
+    tree.appendChild(await loadTree());
+})();
+</script>
+
+</body>
+</html>
