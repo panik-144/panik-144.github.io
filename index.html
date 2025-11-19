@@ -1,58 +1,87 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Dateien im Repo</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .file { margin-left: 20px; }
-    </style>
+<meta charset="UTF-8">
+<title>Repo File Tree</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    .dir {
+        color: #0A58CA; /* Blau */
+        cursor: pointer;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    .file {
+        margin-left: 25px;
+    }
+    .nested {
+        margin-left: 20px;
+        display: none;
+    }
+</style>
 </head>
 <body>
-<h1>Dateien im Repo</h1>
+
+<h1>Dateien im Repository</h1>
 <div id="tree"></div>
 
 <script>
-async function loadTree(path = "") {
-    const user = "panik-144";   // <--- anpassen
-    const repo = "panik-144.github.io";       // <--- anpassen
-    const branch = "main";     // oder "master"
+const USER = "USERNAME";  // <--- anpassen
+const REPO = "REPO";      // <--- anpassen
+const BRANCH = "main";    // oder "master"
 
-    const url = `https://api.github.com/repos/${user}/${repo}/contents/${path}?ref=${branch}`;
+async function fetchDir(path = "") {
+    const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${path}?ref=${BRANCH}`;
     const res = await fetch(url);
 
     if (!res.ok) {
-        document.getElementById("tree").innerHTML = 
-            "Fehler beim Laden: " + res.status;
-        return;
+        return null;
     }
 
-    const items = await res.json();
-
-    const container = document.createElement("div");
-
-    for (const item of items) {
-        const el = document.createElement("div");
-        el.className = "file";
-
-        if (item.type === "file") {
-            el.textContent = "📄 " + item.name;
-        } else if (item.type === "dir") {
-            el.textContent = "📁 " + item.name;
-
-            // rekursiv weitere level laden
-            const sub = await loadTree(item.path);
-            if (sub) el.appendChild(sub);
-        }
-
-        container.appendChild(el);
-    }
-    return container;
+    return await res.json();
 }
 
-loadTree().then(tree => {
-    document.getElementById("tree").appendChild(tree);
-});
+async function buildTree(path = "", parent) {
+    const items = await fetchDir(path);
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type === "dir") {
+            const dirEl = document.createElement("div");
+            dirEl.textContent = item.name;
+            dirEl.className = "dir";
+
+            const subContainer = document.createElement("div");
+            subContainer.className = "nested";
+
+            dirEl.addEventListener("click", async () => {
+                if (subContainer.childElementCount === 0) {
+                    await buildTree(item.path, subContainer);
+                }
+                subContainer.style.display =
+                    subContainer.style.display === "none" ? "block" : "none";
+            });
+
+            parent.appendChild(dirEl);
+            parent.appendChild(subContainer);
+
+        } else if (item.type === "file") {
+            const fileEl = document.createElement("div");
+            fileEl.textContent = item.name;
+            fileEl.className = "file";
+            parent.appendChild(fileEl);
+        }
+    }
+}
+
+(async () => {
+    const root = document.getElementById("tree");
+    await buildTree("", root);
+})();
 </script>
+
 </body>
 </html>
