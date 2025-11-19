@@ -1,51 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <title>Repository File Tree</title>
+    <meta charset="UTF-8">
+    <title>Dateien im Repo</title>
     <style>
-        body { font-family: sans-serif; }
-        ul { list-style-type: none; padding-left: 20px; }
-        li { margin: 4px 0; }
+        body { font-family: sans-serif; padding: 20px; }
+        .file { margin-left: 20px; }
     </style>
 </head>
 <body>
-
-<h1>📁 File Tree</h1>
-<ul id="file-tree"></ul>
+<h1>Dateien im Repo</h1>
+<div id="tree"></div>
 
 <script>
 async function loadTree(path = "") {
-    const user = "panik-144";
-    const repo = "panik-144.github.io";
+    const user = "panik-144";   // <--- anpassen
+    const repo = "panik-144.github.io";       // <--- anpassen
+    const branch = "main";     // oder "master"
 
-    const url = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
-    const response = await fetch(url);
-    const data = await response.json();
+    const url = `https://api.github.com/repos/${user}/${repo}/contents/${path}?ref=${branch}`;
+    const res = await fetch(url);
 
-    const list = document.createElement("ul");
-
-    for (const item of data) {
-        const li = document.createElement("li");
-
-        if (item.type === "file") {
-            li.innerHTML = `<a href="${item.html_url}" target="_blank">${item.name}</a>`;
-        } else if (item.type === "dir") {
-            li.innerHTML = `<strong>${item.name}</strong>`;
-            li.appendChild(await loadTree(item.path));
-        }
-
-        list.appendChild(li);
+    if (!res.ok) {
+        document.getElementById("tree").innerHTML = 
+            "Fehler beim Laden: " + res.status;
+        return;
     }
 
-    return list;
+    const items = await res.json();
+
+    const container = document.createElement("div");
+
+    for (const item of items) {
+        const el = document.createElement("div");
+        el.className = "file";
+
+        if (item.type === "file") {
+            el.textContent = "📄 " + item.name;
+        } else if (item.type === "dir") {
+            el.textContent = "📁 " + item.name;
+
+            // rekursiv weitere level laden
+            const sub = await loadTree(item.path);
+            if (sub) el.appendChild(sub);
+        }
+
+        container.appendChild(el);
+    }
+    return container;
 }
 
-(async () => {
-    const tree = document.getElementById("file-tree");
-    tree.appendChild(await loadTree());
-})();
+loadTree().then(tree => {
+    document.getElementById("tree").appendChild(tree);
+});
 </script>
-
 </body>
 </html>
