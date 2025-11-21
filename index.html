@@ -186,7 +186,6 @@
 
   <script>
     const REPO = "panik-144/panik-144.github.io";
-    const BRANCH = "main"; // or master, depending on your default
 
     // Icons
     const ICONS = {
@@ -197,6 +196,17 @@
 
     const listEl = document.getElementById("file-list");
     const breadcrumbsEl = document.getElementById("breadcrumbs");
+
+    // Handle 404 Redirect (Restore Path)
+    (function handleRedirect() {
+      if (sessionStorage.redirect) {
+        const redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        const redirectUrl = new URL(redirect);
+        // Restore the path from the redirect
+        history.replaceState(null, null, redirectUrl.pathname + redirectUrl.search);
+      }
+    })();
 
     async function fetchFiles(path) {
       listEl.innerHTML = '<div class="loading">Loading...</div>';
@@ -233,24 +243,35 @@
         const div = document.createElement("div");
         div.className = "item";
         div.innerHTML = `<div class="icon">${ICONS.back}</div><div class="name">..</div>`;
-        div.onclick = () => location.hash = parentPath ? `#/${parentPath}` : "#/";
+        div.onclick = (e) => {
+          e.preventDefault();
+          navigateTo(parentPath ? `/${parentPath}/` : "/");
+        };
         listEl.appendChild(div);
       }
 
       files.forEach((f, index) => {
-        if (f.name === "index.html") return; // Hide the index itself
+        if (f.name === "index.html" || f.name === "404.html") return; // Hide system files
 
         const div = document.createElement("a");
         div.className = "item";
         div.style.animationDelay = `${index * 0.05}s`;
 
         if (f.type === "dir") {
-          div.href = `#/${f.path}`;
+          // Folder: Use pushState navigation
+          div.href = `/${f.path}/`;
           div.innerHTML = `<div class="icon">${ICONS.folder}</div><div class="name">${f.name}</div>`;
+          div.onclick = (e) => {
+            e.preventDefault();
+            navigateTo(`/${f.path}/`);
+          };
         } else {
-          div.href = f.download_url; // Direct download/view
-          div.target = "_blank";
+          // File: Direct link to the served file (Curl friendly)
+          // We use the absolute path so it matches the browser URL structure
+          div.href = `/${f.path}`;
+          div.target = "_blank"; // Open in new tab so user can copy URL easily
           div.innerHTML = `<div class="icon">${ICONS.file}</div><div class="name">${f.name}</div><div class="meta">${formatSize(f.size)}</div>`;
+          // Do NOT intercept click. Let browser handle it (opens file).
         }
 
         listEl.appendChild(div);
@@ -259,15 +280,22 @@
 
     function renderBreadcrumbs(path) {
       const parts = path.split("/").filter(p => p);
-      let html = `<span class="breadcrumb-item" onclick="location.hash='#/'">root</span>`;
+      let html = `<span class="breadcrumb-item" onclick="navigateTo('/')">root</span>`;
 
       let current = "";
       parts.forEach(part => {
         current += `/${part}`;
-        html += ` <span class="breadcrumb-separator">/</span> <span class="breadcrumb-item" onclick="location.hash='#${current}'">${part}</span>`;
+        // Capture the current value for the closure
+        const target = current + "/";
+        html += ` <span class="breadcrumb-separator">/</span> <span class="breadcrumb-item" onclick="navigateTo('${target}')">${part}</span>`;
       });
 
       breadcrumbsEl.innerHTML = html;
+    }
+
+    function navigateTo(path) {
+      history.pushState(null, null, path);
+      fetchFiles(location.pathname);
     }
 
     function formatSize(bytes) {
@@ -278,16 +306,13 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     }
 
-    // Handle Navigation
-    function handleHashChange() {
-      const hash = location.hash.slice(1) || "/"; // Remove #
-      fetchFiles(hash);
-    }
-
-    window.addEventListener("hashchange", handleHashChange);
+    // Handle Browser Back/Forward
+    window.addEventListener("popstate", () => {
+      fetchFiles(location.pathname);
+    });
 
     // Initial Load
-    handleHashChange();
+    fetchFiles(location.pathname);
 
   </script>
 </body>
