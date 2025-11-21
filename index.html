@@ -1,91 +1,85 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Repo File Tree</title>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index</title>
+  <style>
     body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      padding: 20px;
     }
-    .dir {
-        color: #0A58CA; /* Blau */
-        cursor: pointer;
-        font-weight: bold;
-        margin-left: 10px;
+    a {
+      color: #4da3ff;
+      text-decoration: none;
     }
-    .file {
-        margin-left: 25px;
+    a:hover {
+      text-decoration: underline;
     }
-    .nested {
-        margin-left: 20px;
-        display: none;
+    .item {
+      margin: 8px 0;
     }
-</style>
+  </style>
 </head>
 <body>
+  <h1>Repository Index</h1>
+  <p>Automatisch generierte Übersicht aller Dateien und Ordner.</p>
 
-<h1>Dateien im Repository</h1>
-<div id="tree"></div>
+  <div id="list"></div>
 
-<script>
-const USER = "panik-144";
-const REPO = "panik-144.github.io";
-const BRANCH = "main";
+  <script>
+    async function listFiles() {
+      const repo = "panik-144/panik-144.github.io"; // dein GitHub Pages Repo
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/`;
 
-async function fetchDir(path = "") {
-    const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${path}?ref=${BRANCH}`;
-    const res = await fetch(url);
+      const container = document.getElementById("list");
 
-    if (!res.ok) {
-        return null;
-    }
+      try {
+        const res = await fetch(apiUrl);
+        const files = await res.json();
 
-    return await res.json();
-}
+        files
+          .filter(f => f.name !== "index.html")
+          .forEach(f => {
+            const div = document.createElement("div");
+            div.className = "item";
 
-async function buildTree(path = "", parent) {
-    const items = await fetchDir(path);
-    if (!items) return;
-
-    for (const item of items) {
-        if (item.type === "dir") {
-            const dirEl = document.createElement("div");
-            dirEl.textContent = item.name;
-            dirEl.className = "dir";
-
-            const subContainer = document.createElement("div");
-            subContainer.className = "nested";
-
-            dirEl.addEventListener("click", async () => {
-                if (subContainer.childElementCount === 0) {
-                    await buildTree(item.path, subContainer);
-                }
-                subContainer.style.display =
-                    subContainer.style.display === "none" ? "block" : "none";
-            });
-
-            parent.appendChild(dirEl);
-            parent.appendChild(subContainer);
-
-        } else if (item.type === "file") {
-            if (item.name == "index.html") {
-            
+            if (f.type === "dir") {
+              // Ordner → weiterleiten auf /foldername
+              const link = document.createElement("a");
+              link.href = `/${f.name}/`;
+              link.textContent = `[Ordner] ${f.name}`;
+              div.appendChild(link);
             } else {
-                const fileEl = document.createElement("div");
-                fileEl.textContent = item.name;
-                fileEl.className = "file";
-                parent.appendChild(fileEl);
+              // Dateien behandeln
+              const isText = f.name.match(/\.(txt|md|log|json|xml|csv)$/i);
+
+              if (isText) {
+                const link = document.createElement("a");
+                link.href = f.html_url.replace("github.com", "raw.githubusercontent.com").replace("blob/", "");
+                link.textContent = `${f.name} (anzeigen)`;
+                link.target = "_blank";
+                div.appendChild(link);
+              }
+
+              // Download-Link
+              const dl = document.createElement("a");
+              dl.href = f.download_url;
+              dl.textContent = " ⬇️ Download";
+              dl.style.marginLeft = "10px";
+              div.appendChild(dl);
             }
-        }
+
+            container.appendChild(div);
+          });
+      } catch (err) {
+        container.textContent = "Fehler beim Laden der Dateien.";
+      }
     }
-}
 
-(async () => {
-    const root = document.getElementById("tree");
-    await buildTree("", root);
-})();
-</script>
-
+    listFiles();
+  </script>
 </body>
 </html>
