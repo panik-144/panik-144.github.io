@@ -345,7 +345,6 @@ to revert run "sudo chflags nouchg path/to/file"
     }
 
     function navigateTo(path) {
-      searchInput.value = ""; // Clear search on nav
       history.pushState(null, null, path);
       renderCurrentPath();
     }
@@ -358,56 +357,10 @@ to revert run "sudo chflags nouchg path/to/file"
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     }
 
-    // Search Logic
-    searchInput.addEventListener("input", (e) => {
-      const query = e.target.value.toLowerCase();
-
-      if (!query) {
-        renderCurrentPath();
-        return;
-      }
-
-      // Search global
-      const results = allFiles.filter(f => f.path.toLowerCase().includes(query));
-
-      // Update UI
-      breadcrumbsEl.innerHTML = `<span class="breadcrumb-item" onclick="navigateTo('/')">Search Results</span>`;
-      renderList(results, null, true);
-    });
-
-    // Copy Curl Logic
-    window.copyCurl = async (e, url, filename) => {
-      e.preventDefault(); // Prevent link open
-      e.stopPropagation();
-
-      const cmd = `curl "${url}" -o "${filename}"`;
-
-      try {
-        await navigator.clipboard.writeText(cmd);
-
-        // Feedback
-        const btn = e.currentTarget;
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = ICONS.check;
-        btn.style.color = "#4ade80"; // Green
-
-        setTimeout(() => {
-          btn.innerHTML = originalHtml;
-          btn.style.color = "";
-        }, 2000);
-      } catch (err) {
-        console.error("Copy failed", err);
-      }
-    };
-
-    window.addEventListener("popstate", () => {
-      searchInput.value = "";
-      renderCurrentPath();
-    });
+    window.addEventListener("popstate", renderCurrentPath);
 
     // Start
     initRepo();
-
   </script>
 </body>
 
