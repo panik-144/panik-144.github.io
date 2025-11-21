@@ -19,7 +19,7 @@
       text-decoration: underline;
     }
     .item {
-      margin: 10px 0;
+      margin: 8px 0;
     }
   </style>
 </head>
@@ -31,7 +31,7 @@
 
   <script>
     async function listFiles() {
-      const repo = "panik-144/panik-144.github.io"; // dein GitHub Pages Repo
+      const repo = "panik-144/panik-144.github.io";
       const apiUrl = `https://api.github.com/repos/${repo}/contents/`;
 
       const container = document.getElementById("list");
@@ -47,29 +47,25 @@
             div.className = "item";
 
             if (f.type === "dir") {
-              // Ordner → weiterleiten auf /foldername
               const link = document.createElement("a");
-              link.href = `/${f.name}/`;
+              link.href = `${location.origin}/${f.name}/`;
               link.textContent = `[Ordner] ${f.name}`;
               div.appendChild(link);
             } else {
-              // Dateien behandeln
               const isText = f.name.match(/\.(txt|md|log|json|xml|csv)$/i);
 
               if (isText) {
                 const link = document.createElement("a");
-                link.href = f.html_url.replace("github.com", "raw.githubusercontent.com").replace("blob/", "");
+                link.href = f.download_url;
                 link.textContent = `${f.name} (anzeigen)`;
                 link.target = "_blank";
                 div.appendChild(link);
+              } else {
+                const link = document.createElement("a");
+                link.href = f.download_url;
+                link.textContent = f.name;
+                div.appendChild(link);
               }
-
-              // Download-Link
-              const dl = document.createElement("a");
-              dl.href = f.download_url;
-              dl.textContent = " ⬇️ Download";
-              dl.style.marginLeft = "10px";
-              div.appendChild(dl);
             }
 
             container.appendChild(div);
@@ -83,3 +79,4 @@
   </script>
 </body>
 </html>
+
