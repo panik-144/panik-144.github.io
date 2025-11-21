@@ -30,6 +30,7 @@
   <script>
     async function listFiles() {
       const repo = "panik-144/panik-144.github.io";
+      const path = "";
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
       const container = document.getElementById("list");
@@ -43,11 +44,9 @@
           .forEach(f => {
             const div = document.createElement("div");
             div.className = "item";
-
             if (f.type === "dir") {
               const link = document.createElement("a");
--              link.href = `${location.origin}/${path}${f.name}/`;
-+              link.href = `${location.origin}/${path}${path ? '/' : ''}${f.name}/`;
+              link.href = `${location.origin}/${path}${path ? '/' : ''}${f.name}/`;
               link.textContent = `[Ordner] ${f.name}`;
               div.appendChild(link);
             } else {
