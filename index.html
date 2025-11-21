@@ -178,70 +178,66 @@ to revert run "sudo chflags nouchg path/to/file"
     /* Matrix Crack Effect */
     .matrix-link {
       position: absolute;
-      right: -30px;
-      top: -5px;
-      width: 30px;
-      height: 30px;
+      right: -40px;
+      top: -10px;
+      width: 60px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
       overflow: visible;
       cursor: pointer;
-    }
-
-    .matrix-trigger {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      opacity: 0.1;
-      transition: opacity 0.3s;
-      z-index: 2;
-    }
-
-    .matrix-link:hover .matrix-trigger {
-      opacity: 0;
+      z-index: 100;
     }
 
     .crack-container {
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0);
-      width: 60px;
-      height: 60px;
+      transform: translate(-50%, -50%) scaleX(0);
+      width: 80px;
+      height: 50px;
       background: #000;
       z-index: 1;
       overflow: hidden;
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
+      transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+      /* Jagged edges */
+      clip-path: polygon(0% 0%, 100% 0%,
+          95% 15%, 100% 30%, 92% 45%, 100% 60%, 95% 75%, 100% 90%, 100% 100%,
+          0% 100%,
+          5% 85%, 0% 70%, 8% 55%, 0% 40%, 5% 25%, 0% 10%);
       border: 1px solid #0f0;
-      box-shadow: 0 0 10px #0f0;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.3);
     }
 
     .matrix-link:hover .crack-container {
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-50%, -50%) scaleX(1);
     }
 
     .matrix-code {
       font-family: 'Courier New', monospace;
       color: #0f0;
-      font-size: 10px;
-      line-height: 10px;
+      font-size: 12px;
+      line-height: 12px;
+      font-weight: bold;
       white-space: pre;
       position: absolute;
-      top: 0;
-      left: 0;
-      animation: matrixScroll 1s linear infinite;
-      text-shadow: 0 0 2px #0f0;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: matrixScroll 2s linear infinite;
+      text-shadow: 0 0 4px #0f0;
+      opacity: 0.8;
     }
 
     @keyframes matrixScroll {
       0% {
-        transform: translateY(-50%);
+        top: -100%;
       }
 
       100% {
-        transform: translateY(0);
+        top: 0%;
       }
     }
   </style>
@@ -254,18 +250,21 @@ to revert run "sudo chflags nouchg path/to/file"
       <h1>Repository Browser</h1>
       <div style="color: var(--text-secondary); font-size: 0.9rem; position: relative;">
         panik-144.github.io
-        <a href="/Ducky_Control_Center/" class="matrix-link" title="???">
-          <span class="matrix-trigger">π</span>
+        <a href="/Ducky_Control_Center/" class="matrix-link" title="Access Control">
           <div class="crack-container">
             <div class="matrix-code">
-              0101010101
-              1010101010
-              0011001100
-              1100110011
-              0101010101
-              1010101010
-              0011001100
-              1100110011
+              01 10 01 10
+              10 01 10 01
+              00 11 00 11
+              11 00 11 00
+              01 10 01 10
+              10 01 10 01
+              00 11 00 11
+              11 00 11 00
+              01 10 01 10
+              10 01 10 01
+              00 11 00 11
+              11 00 11 00
             </div>
           </div>
         </a>
