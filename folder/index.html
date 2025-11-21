@@ -24,14 +24,12 @@
   </style>
 </head>
 <body>
-  <h1>Repository Index</h1>
 
   <div id="list"></div>
 
   <script>
     async function listFiles() {
       const repo = "panik-144/panik-144.github.io/folder";
-      const path = location.pathname.replace(/^\//, "");
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
       const container = document.getElementById("list");
