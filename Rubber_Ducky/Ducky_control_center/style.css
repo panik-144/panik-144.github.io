@@ -2,9 +2,11 @@
     --bg-color: #0a0a0a;
     --panel-bg: #111111;
     --text-main: #e0e0e0;
-    --primary: #00ff41; /* Hacker Green */
+    --primary: #00ff41;
+    /* Hacker Green */
     --primary-dim: #008f11;
-    --accent: #ff0055; /* Cyber Red */
+    --accent: #ff0055;
+    /* Cyber Red */
     --border: #333;
     --font-mono: 'Share Tech Mono', monospace;
     --font-code: 'JetBrains Mono', monospace;
@@ -22,7 +24,7 @@ body {
     font-family: var(--font-mono);
     height: 100vh;
     overflow-x: hidden;
-    background-image: 
+    background-image:
         linear-gradient(rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9)),
         url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a1a1a' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
@@ -42,8 +44,13 @@ body {
 }
 
 @keyframes scan {
-    0% { top: -5%; }
-    100% { top: 105%; }
+    0% {
+        top: -5%;
+    }
+
+    100% {
+        top: 105%;
+    }
 }
 
 .container {
@@ -72,7 +79,8 @@ h1 {
 }
 
 /* Simple Glitch Effect */
-.glitch::before, .glitch::after {
+.glitch::before,
+.glitch::after {
     content: attr(data-text);
     position: absolute;
     top: 0;
@@ -81,12 +89,14 @@ h1 {
     height: 100%;
     background: var(--bg-color);
 }
+
 .glitch::before {
     left: 2px;
     text-shadow: -1px 0 var(--accent);
     clip: rect(24px, 550px, 90px, 0);
     animation: glitch-anim-2 3s infinite linear alternate-reverse;
 }
+
 .glitch::after {
     left: -2px;
     text-shadow: -1px 0 #00ffff;
@@ -95,20 +105,55 @@ h1 {
 }
 
 @keyframes glitch-anim {
-    0% { clip: rect(10px, 9999px, 30px, 0); }
-    20% { clip: rect(80px, 9999px, 100px, 0); }
-    40% { clip: rect(10px, 9999px, 100px, 0); }
-    60% { clip: rect(40px, 9999px, 60px, 0); }
-    80% { clip: rect(120px, 9999px, 140px, 0); }
-    100% { clip: rect(60px, 9999px, 80px, 0); }
+    0% {
+        clip: rect(10px, 9999px, 30px, 0);
+    }
+
+    20% {
+        clip: rect(80px, 9999px, 100px, 0);
+    }
+
+    40% {
+        clip: rect(10px, 9999px, 100px, 0);
+    }
+
+    60% {
+        clip: rect(40px, 9999px, 60px, 0);
+    }
+
+    80% {
+        clip: rect(120px, 9999px, 140px, 0);
+    }
+
+    100% {
+        clip: rect(60px, 9999px, 80px, 0);
+    }
 }
+
 @keyframes glitch-anim-2 {
-    0% { clip: rect(100px, 9999px, 120px, 0); }
-    20% { clip: rect(20px, 9999px, 40px, 0); }
-    40% { clip: rect(140px, 9999px, 160px, 0); }
-    60% { clip: rect(60px, 9999px, 80px, 0); }
-    80% { clip: rect(10px, 9999px, 30px, 0); }
-    100% { clip: rect(120px, 9999px, 140px, 0); }
+    0% {
+        clip: rect(100px, 9999px, 120px, 0);
+    }
+
+    20% {
+        clip: rect(20px, 9999px, 40px, 0);
+    }
+
+    40% {
+        clip: rect(140px, 9999px, 160px, 0);
+    }
+
+    60% {
+        clip: rect(60px, 9999px, 80px, 0);
+    }
+
+    80% {
+        clip: rect(10px, 9999px, 30px, 0);
+    }
+
+    100% {
+        clip: rect(120px, 9999px, 140px, 0);
+    }
 }
 
 .status-indicator {
@@ -144,6 +189,7 @@ h1 {
     border-top: 2px solid var(--primary);
     border-left: 2px solid var(--primary);
 }
+
 .panel::after {
     content: '';
     position: absolute;
@@ -177,7 +223,8 @@ label {
     margin-bottom: 5px;
 }
 
-input, textarea {
+input,
+textarea {
     width: 100%;
     background: #000;
     border: 1px solid var(--border);
@@ -189,7 +236,8 @@ input, textarea {
     transition: border-color 0.3s;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
     border-color: var(--primary);
 }
 
@@ -308,11 +356,11 @@ textarea {
     transition: .4s;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background-color: var(--primary);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(20px);
 }
 

