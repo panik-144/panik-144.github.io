@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ducky Command Center</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="scan-line"></div>
+    <div class="container">
+        <header>
+            <h1><span class="glitch" data-text="DUCKY_C2">DUCKY_C2</span> // CONTROL_CENTER</h1>
+            <div class="status-indicator" id="connectionStatus">DISCONNECTED</div>
+        </header>
+
+        <main>
+            <!-- Settings Section -->
+            <section id="settings" class="panel">
+                <h2><i class="icon">⚙</i> SYSTEM_CONFIG</h2>
+                <div class="input-group">
+                    <label>REPO_TARGET (user/repo)</label>
+                    <input type="text" id="repoName" placeholder="panik-144/panik-144.github.io" value="panik-144/panik-144.github.io">
+                </div>
+                <div class="input-group">
+                    <label>ACCESS_TOKEN (repo scope)</label>
+                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
+                </div>
+                <button id="connectBtn" class="cyber-btn">INITIALIZE_CONNECTION</button>
+            </section>
+
+            <!-- Dashboard Grid (Hidden by default) -->
+            <div id="dashboard" class="hidden">
+                
+                <!-- Status Board -->
+                <section class="panel" id="statusBoard">
+                    <h2><i class="icon">📡</i> ACTIVE_PAYLOADS</h2>
+                    <div id="activePayloadsList" class="terminal-output">
+                        <span class="loading">SCANNING_NETWORK...</span>
+                    </div>
+                </section>
+
+                <!-- File Manager -->
+                <section class="panel" id="fileManager">
+                    <h2><i class="icon">📂</i> PAYLOAD_CONTROLLER</h2>
+                    <div class="toolbar">
+                        <button id="refreshFiles" class="cyber-btn small">REFRESH</button>
+                    </div>
+                    <div id="fileList" class="file-grid">
+                        <!-- Files will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Payload Generator -->
+                <section class="panel" id="generator">
+                    <h2><i class="icon">⚡</i> PAYLOAD_FORGE</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="reverse-tcp">REVERSE_TCP</button>
+                        <button class="tab-btn" data-tab="simple-msg">MESSAGE</button>
+                    </div>
+                    
+                    <div class="tab-content" id="reverse-tcp">
+                        <div class="input-group">
+                            <label>HOST_IP</label>
+                            <input type="text" id="tcpHost" placeholder="192.168.1.x">
+                        </div>
+                        <div class="input-group">
+                            <label>PORT</label>
+                            <input type="number" id="tcpPort" placeholder="4444" value="4444">
+                        </div>
+                        <button id="generateTcpBtn" class="cyber-btn action">GENERATE_PAYLOAD</button>
+                    </div>
+
+                    <div class="tab-content hidden" id="simple-msg">
+                        <div class="input-group">
+                            <label>MESSAGE_CONTENT</label>
+                            <input type="text" id="msgContent" placeholder="Hello World">
+                        </div>
+                        <button id="generateMsgBtn" class="cyber-btn action">GENERATE_PAYLOAD</button>
+                    </div>
+
+                    <div class="output-area">
+                        <label>GENERATED_SCRIPT</label>
+                        <textarea id="scriptOutput" readonly></textarea>
+                        <button id="copyScriptBtn" class="cyber-btn small">COPY_TO_CLIPBOARD</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+        
+        <footer>
+            <div class="footer-text">SYSTEM_READY // V1.0.0</div>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
