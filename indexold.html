@@ -25,14 +25,14 @@
 </head>
 <body>
   <h1>Repository Index</h1>
-  <p>Automatisch generierte Übersicht aller Dateien und Ordner.</p>
 
   <div id="list"></div>
 
   <script>
     async function listFiles() {
       const repo = "panik-144/panik-144.github.io";
-      const apiUrl = `https://api.github.com/repos/${repo}/contents/`;
+      const path = location.pathname.replace(/^\//, "");
+      const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
       const container = document.getElementById("list");
 
@@ -48,7 +48,7 @@
 
             if (f.type === "dir") {
               const link = document.createElement("a");
-              link.href = `${location.origin}/${f.name}/`;
+              link.href = `${location.origin}/${path}${f.name}/`;
               link.textContent = `[Ordner] ${f.name}`;
               div.appendChild(link);
             } else {

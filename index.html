@@ -1,82 +1,49 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
-      padding: 20px;
-    }
-    a {
-      color: #4da3ff;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    .item {
-      margin: 8px 0;
-    }
-  </style>
-</head>
-<body>
-  <h1>Repository Index</h1>
-
-  <div id="list"></div>
-
   <script>
     async function listFiles() {
       const repo = "panik-144/panik-144.github.io";
       const path = location.pathname.replace(/^\//, "");
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
-
       const container = document.getElementById("list");
+
+      container.textContent = "Lädt...";
 
       try {
         const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const files = await res.json();
+        container.textContent = "";
 
         files
           .filter(f => f.name !== "index.html")
-          .forEach(f => {
-            const div = document.createElement("div");
-            div.className = "item";
+          .sort((a, b) => b.type.localeCompare(a.type) || a.name.localeCompare(b.name))
+          .forEach(f => createFileItem(f, path, container));
 
-            if (f.type === "dir") {
-              const link = document.createElement("a");
-              link.href = `${location.origin}/${path}${f.name}/`;
-              link.textContent = `[Ordner] ${f.name}`;
-              div.appendChild(link);
-            } else {
-              const isText = f.name.match(/\.(txt|md|log|json|xml|csv)$/i);
-
-              if (isText) {
-                const link = document.createElement("a");
-                link.href = f.download_url;
-                link.textContent = `${f.name} (anzeigen)`;
-                link.target = "_blank";
-                div.appendChild(link);
-              } else {
-                const link = document.createElement("a");
-                link.href = f.download_url;
-                link.textContent = f.name;
-                div.appendChild(link);
-              }
-            }
-
-            container.appendChild(div);
-          });
       } catch (err) {
         container.textContent = "Fehler beim Laden der Dateien.";
+        console.error(err);
       }
+    }
+
+    function createFileItem(file, path, container) {
+      const div = document.createElement("div");
+      div.className = "item";
+
+      const link = document.createElement("a");
+      link.target = file.type === "file" && !file.name.match(/\.(txt|md|log|json|xml|csv)$/i) ? "_blank" : "";
+
+      if (file.type === "dir") {
+        link.href = `${location.origin}/${path}${file.name}/`;
+        link.textContent = `📁 ${file.name}`;
+      } else {
+        const isText = file.name.match(/\.(txt|md|log|json|xml|csv)$/i);
+        link.href = file.download_url;
+        link.textContent = `${isText ? "📄" : "📎"} ${file.name}`;
+      }
+
+      div.appendChild(link);
+      container.appendChild(div);
     }
 
     listFiles();
   </script>
-</body>
-</html>
-
