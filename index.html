@@ -70,8 +70,8 @@ async function buildTree(path = "", parent) {
 
         } else if (item.type === "file") {
             if (item.name == "index.html") {
-
-            else
+            
+            } else {
                 const fileEl = document.createElement("div");
                 fileEl.textContent = item.name;
                 fileEl.className = "file";
