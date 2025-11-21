@@ -186,8 +186,8 @@
 
   <script>
     const REPO = "panik-144/panik-144.github.io";
+    const BRANCH = "main";
 
-    // Icons
     const ICONS = {
       folder: '<svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>',
       file: '<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>',
@@ -197,44 +197,93 @@
     const listEl = document.getElementById("file-list");
     const breadcrumbsEl = document.getElementById("breadcrumbs");
 
-    // Handle 404 Redirect (Restore Path)
+    // State
+    let allFiles = [];
+    let folderSizes = {};
+
+    // Handle 404 Redirect
     (function handleRedirect() {
       if (sessionStorage.redirect) {
         const redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
         const redirectUrl = new URL(redirect);
-        // Restore the path from the redirect
         history.replaceState(null, null, redirectUrl.pathname + redirectUrl.search);
       }
     })();
 
-    async function fetchFiles(path) {
-      listEl.innerHTML = '<div class="loading">Loading...</div>';
+    async function initRepo() {
+      listEl.innerHTML = '<div class="loading">Loading repository structure...</div>';
 
       try {
-        // Clean path
-        const cleanPath = path.replace(/^\//, "").replace(/\/$/, "");
-        const apiUrl = `https://api.github.com/repos/${REPO}/contents/${cleanPath}`;
-
+        // Fetch the entire tree recursively
+        const apiUrl = `https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`;
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error(`GitHub API Error: ${res.status}`);
         const data = await res.json();
 
-        renderList(data, cleanPath);
-        renderBreadcrumbs(cleanPath);
+        allFiles = data.tree;
+        calculateFolderSizes();
+
+        // Initial Render
+        renderCurrentPath();
       } catch (err) {
         console.error(err);
-        listEl.innerHTML = `<div class="error">Failed to load content.<br>${err.message}</div>`;
+        listEl.innerHTML = `<div class="error">Failed to load repository.<br>${err.message}</div>`;
       }
     }
 
-    function renderList(files, currentPath) {
+    function calculateFolderSizes() {
+      folderSizes = {};
+
+      // Initialize all folders with 0
+      allFiles.forEach(f => {
+        if (f.type === "tree") {
+          folderSizes[f.path] = 0;
+        }
+      });
+      folderSizes[""] = 0; // Root
+
+      // Sum up file sizes
+      allFiles.forEach(f => {
+        if (f.type === "blob") { // blob = file
+          const size = f.size;
+          const parts = f.path.split("/");
+
+          // Add size to all parent folders
+          let currentPath = "";
+          parts.slice(0, -1).forEach((part, i) => {
+            currentPath += (i === 0 ? "" : "/") + part;
+            if (folderSizes[currentPath] !== undefined) {
+              folderSizes[currentPath] += size;
+            }
+          });
+          // Add to root
+          folderSizes[""] += size;
+        }
+      });
+    }
+
+    function renderCurrentPath() {
+      const path = location.pathname.replace(/^\//, "").replace(/\/$/, "");
+      renderList(path);
+      renderBreadcrumbs(path);
+    }
+
+    function renderList(currentPath) {
       listEl.innerHTML = "";
 
+      // Filter items for current directory
+      const contents = allFiles.filter(f => {
+        const parentPath = f.path.substring(0, f.path.lastIndexOf("/"));
+        // Handle root (parentPath is empty string if no slash)
+        const fDir = f.path.includes("/") ? parentPath : "";
+        return fDir === currentPath;
+      });
+
       // Sort: Folders first, then files
-      files.sort((a, b) => {
-        if (a.type === b.type) return a.name.localeCompare(b.name);
-        return a.type === "dir" ? -1 : 1;
+      contents.sort((a, b) => {
+        if (a.type === b.type) return a.name ? a.name.localeCompare(b.name) : a.path.localeCompare(b.path);
+        return a.type === "tree" ? -1 : 1;
       });
 
       // Add ".." if not root
@@ -250,28 +299,26 @@
         listEl.appendChild(div);
       }
 
-      files.forEach((f, index) => {
-        if (f.name === "index.html" || f.name === "404.html") return; // Hide system files
+      contents.forEach((f, index) => {
+        const name = f.path.split("/").pop();
+        if (name === "index.html" || name === "404.html") return;
 
         const div = document.createElement("a");
         div.className = "item";
-        div.style.animationDelay = `${index * 0.05}s`;
+        div.style.animationDelay = `${index * 0.02}s`; // Faster animation
 
-        if (f.type === "dir") {
-          // Folder: Use pushState navigation
+        if (f.type === "tree") { // Directory
           div.href = `/${f.path}/`;
-          div.innerHTML = `<div class="icon">${ICONS.folder}</div><div class="name">${f.name}</div>`;
+          const size = folderSizes[f.path] || 0;
+          div.innerHTML = `<div class="icon">${ICONS.folder}</div><div class="name">${name}</div><div class="meta">${formatSize(size)}</div>`;
           div.onclick = (e) => {
             e.preventDefault();
             navigateTo(`/${f.path}/`);
           };
-        } else {
-          // File: Direct link to the served file (Curl friendly)
-          // We use the absolute path so it matches the browser URL structure
+        } else { // File
           div.href = `/${f.path}`;
-          div.target = "_blank"; // Open in new tab so user can copy URL easily
-          div.innerHTML = `<div class="icon">${ICONS.file}</div><div class="name">${f.name}</div><div class="meta">${formatSize(f.size)}</div>`;
-          // Do NOT intercept click. Let browser handle it (opens file).
+          div.target = "_blank";
+          div.innerHTML = `<div class="icon">${ICONS.file}</div><div class="name">${name}</div><div class="meta">${formatSize(f.size)}</div>`;
         }
 
         listEl.appendChild(div);
@@ -285,7 +332,6 @@
       let current = "";
       parts.forEach(part => {
         current += `/${part}`;
-        // Capture the current value for the closure
         const target = current + "/";
         html += ` <span class="breadcrumb-separator">/</span> <span class="breadcrumb-item" onclick="navigateTo('${target}')">${part}</span>`;
       });
@@ -295,24 +341,21 @@
 
     function navigateTo(path) {
       history.pushState(null, null, path);
-      fetchFiles(location.pathname);
+      renderCurrentPath();
     }
 
     function formatSize(bytes) {
-      if (bytes === 0) return "0 B";
+      if (!bytes) return "0 B";
       const k = 1024;
       const sizes = ["B", "KB", "MB", "GB"];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     }
 
-    // Handle Browser Back/Forward
-    window.addEventListener("popstate", () => {
-      fetchFiles(location.pathname);
-    });
+    window.addEventListener("popstate", renderCurrentPath);
 
-    // Initial Load
-    fetchFiles(location.pathname);
+    // Start
+    initRepo();
 
   </script>
 </body>
