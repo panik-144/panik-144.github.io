@@ -29,9 +29,9 @@
 <div id="tree"></div>
 
 <script>
-const USER = "panik-144";  // <--- anpassen
-const REPO = "panik-144.github.io";      // <--- anpassen
-const BRANCH = "main";    // oder "master"
+const USER = "panik-144";
+const REPO = "panik-144.github.io";
+const BRANCH = "main";
 
 async function fetchDir(path = "") {
     const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${path}?ref=${BRANCH}`;
@@ -69,10 +69,14 @@ async function buildTree(path = "", parent) {
             parent.appendChild(subContainer);
 
         } else if (item.type === "file") {
-            const fileEl = document.createElement("div");
-            fileEl.textContent = item.name;
-            fileEl.className = "file";
-            parent.appendChild(fileEl);
+            if (item.name == ".index.html") {
+
+            else
+                const fileEl = document.createElement("div");
+                fileEl.textContent = item.name;
+                fileEl.className = "file";
+                parent.appendChild(fileEl);
+            }
         }
     }
 }
