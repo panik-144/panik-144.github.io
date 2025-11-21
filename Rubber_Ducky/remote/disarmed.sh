@@ -1,3 +1,5 @@
+open -a calculator
+
 SELF_DESTRUCT
 # Dieser Befehl signalisiert dem Agenten, sich selbst zu löschen.
 # Er entfernt:
