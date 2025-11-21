@@ -29,7 +29,11 @@
 
   <script>
     async function listFiles() {
-      const repo = "panik-144/panik-144.github.io/folder";
+      const repo = "panik-144/panik-144.github.io";
+      // Stelle hier den Pfad für dieses index.html ein:
+      // leer string "" = root, z.B. "folder" = panik-144.github.io/folder
+      const basePath = "folder";
+      const path = basePath ? basePath.replace(/^\/|\/$/g, "") : location.pathname.replace(/^\//, "").replace(/\/$/, "");
       const apiUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
 
       const container = document.getElementById("list");
@@ -76,4 +80,3 @@
   </script>
 </body>
 </html>
-
