@@ -36,11 +36,17 @@
       const container = document.getElementById("list");
       container.textContent = "Lädt...";
 
+      console.log("Path:", path);
+      console.log("API URL:", apiUrl);
+
       try {
         const res = await fetch(apiUrl);
+        console.log("Response Status:", res.status);
+        
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         const files = await res.json();
+        console.log("Files:", files);
         container.textContent = "";
 
         files
@@ -49,8 +55,8 @@
           .forEach(f => createFileItem(f, path, container));
 
       } catch (err) {
-        container.textContent = "Fehler beim Laden der Dateien.";
-        console.error(err);
+        container.textContent = `Fehler: ${err.message}`;
+        console.error("Error:", err);
       }
     }
 
