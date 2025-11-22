@@ -164,6 +164,13 @@ async function checkActivePayload() {
 
 // ... (updateFile remains same)
 
+function saveCredentials(repo, token) {
+    state.repo = repo;
+    state.token = token;
+    localStorage.setItem('ducky_repo', repo);
+    localStorage.setItem('ducky_token', token);
+}
+
 // Logic Functions
 window.activatePayload = async function (attackName) {
     if (!confirm(`ACTIVATE MODULE: ${attackName}?\nThis will overwrite remote/activate.sh and remote/activate.ps1.`)) return;
