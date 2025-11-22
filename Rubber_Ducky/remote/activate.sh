@@ -1,2 +1,2 @@
-# ATTACK: Rickroll
-open -a Calculator
+# ATTACK: Cleanup
+SELF_DESTRUCT
