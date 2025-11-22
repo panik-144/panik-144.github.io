@@ -1,6 +1,6 @@
 open -a Calculator
 
-SELF_DESTRUC
+SELF_DESTRUCT
 # Dieser Befehl signalisiert dem Agenten, sich selbst zu löschen.
 # Er entfernt:
 # 1. ~/.hidden_updater.sh
