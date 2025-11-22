@@ -1,4 +1,2 @@
 # ATTACK: Cleanup
-rm -f inject.bin
-history -c
-echo "System Cleaned."
+SELF_DESTRUCT
