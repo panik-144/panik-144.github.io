@@ -162,7 +162,181 @@ async function checkActivePayload() {
     }
 }
 
-// ... (updateFile remains same)
+async function updateFile(path, content, message, isBase64 = false) {
+    try {
+        let sha = '';
+        try {
+            const current = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
+                headers: {
+                    'Authorization': `Bearer ${state.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (current.ok) {
+                const data = await current.json();
+                sha = data.sha;
+            }
+        } catch (e) { }
+
+        const body = {
+            message: message,
+            content: isBase64 ? content : btoa(content),
+            branch: 'main'
+        };
+
+        if (sha) body.sha = sha;
+
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${state.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || response.statusText);
+        }
+
+        return true;
+    } catch (e) {
+        throw e;
+    }
+}
+
+// UI Functions
+function showDashboard() {
+    elements.settings.classList.add('hidden');
+    elements.dashboard.classList.remove('hidden');
+    elements.statusIndicator.innerText = 'CONNECTED';
+    elements.statusIndicator.classList.add('connected');
+    loadFiles();
+    checkActivePayload();
+    loadLoot();
+}
+
+function renderFiles(files) {
+    elements.fileList.innerHTML = '';
+
+    if (!Array.isArray(files)) return;
+
+    // Filter for directories (Attacks)
+    const attacks = files.filter(f => f.type === 'dir');
+
+    attacks.forEach(attack => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+
+        const isActive = attack.name === state.activePayload;
+        if (isActive) card.classList.add('active');
+
+        card.innerHTML = `
+            <div class="file-info">
+                <div class="file-name">${attack.name}</div>
+                <div class="file-size">MODULE</div>
+            </div>
+            <div class="file-actions">
+                <button class="cyber-btn small" onclick="openEditor('${attack.name}')" style="margin-right: 5px; border-color: var(--text-secondary); color: var(--text-secondary);">EDIT</button>
+                ${!isActive ? `<button class="cyber-btn small" onclick="activatePayload('${attack.name}')">ACTIVATE</button>` : '<span class="status-indicator connected">ACTIVE</span>'}
+            </div>
+        `;
+        elements.fileList.appendChild(card);
+    });
+}
+
+// Lootbox Logic
+async function loadLoot() {
+    elements.lootList.innerHTML = '<div class="loading">SCANNING_LOOT...</div>';
+    try {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Rubber_Ducky/Loot`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (response.ok) {
+            const files = await response.json();
+            renderLoot(files);
+        } else {
+            elements.lootList.innerHTML = '<div class="terminal-output">NO_LOOT_FOUND</div>';
+        }
+    } catch (e) {
+        elements.lootList.innerHTML = `<div class="terminal-output error">ERROR: ${e.message}</div>`;
+    }
+}
+
+function renderLoot(files) {
+    elements.lootList.innerHTML = '';
+    if (!Array.isArray(files) || files.length === 0) {
+        elements.lootList.innerHTML = '<div class="terminal-output">NO_LOOT_FOUND</div>';
+        return;
+    }
+
+    files.forEach(file => {
+        const card = document.createElement('div');
+        card.className = 'file-card';
+        card.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${(file.size / 1024).toFixed(2)} KB</div>
+                </div>
+                <div class="file-actions">
+                    <a href="${file.html_url}" target="_blank" class="cyber-btn small">VIEW</a>
+                </div>
+            `;
+        elements.lootList.appendChild(card);
+    });
+}
+
+// Editor Logic
+window.openEditor = async function (attackName) {
+    editorState.attackName = attackName;
+    editorState.fileType = 'sh';
+    elements.editorTitle.innerText = `EDIT_PAYLOAD: ${attackName}`;
+    elements.editorModal.classList.remove('hidden');
+    await loadEditorContent();
+};
+
+window.closeEditor = function () {
+    elements.editorModal.classList.add('hidden');
+};
+
+window.switchTab = async function (type) {
+    editorState.fileType = type;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    await loadEditorContent();
+};
+
+async function loadEditorContent() {
+    elements.editorContent.value = 'LOADING...';
+    try {
+        const filename = editorState.fileType === 'sh' ? 'activate.sh' : 'activate.ps1';
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Rubber_Ducky/Attacks/${editorState.attackName}/${filename}`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            elements.editorContent.value = atob(data.content);
+        } else {
+            elements.editorContent.value = '# FILE NOT FOUND';
+        }
+    } catch (e) {
+        elements.editorContent.value = 'ERROR LOADING FILE';
+    }
+}
+
+window.saveEditorContent = async function () {
+    const content = elements.editorContent.value;
+    const filename = editorState.fileType === 'sh' ? 'activate.sh' : 'activate.ps1';
+    const path = `Rubber_Ducky/Attacks/${editorState.attackName}/${filename}`;
+
+    try {
+        await updateFile(path, content, `Update ${filename} for ${editorState.attackName}`);
+        alert('SAVED_SUCCESSFULLY');
+    } catch (e) {
+        alert('SAVE_FAILED: ' + e.message);
+    }
+};
 
 function saveCredentials(repo, token) {
     state.repo = repo;
