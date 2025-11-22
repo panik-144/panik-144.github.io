@@ -38,11 +38,42 @@
             <!-- Dashboard Grid (Hidden by default) -->
             <div id="dashboard" class="hidden">
 
+                <!-- Top Bar with Kill Switch -->
+                <div class="dashboard-header"
+                    style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                    <div class="stats-mini">
+                        <!-- Mini stats could go here -->
+                    </div>
+                    <button id="killSwitch" class="cyber-btn danger">☠ KILL_SWITCH</button>
+                </div>
+
                 <!-- Status Board -->
                 <section class="panel" id="statusBoard">
                     <h2><i class="icon">📡</i> ACTIVE_PAYLOADS</h2>
                     <div id="activePayloadsList" class="terminal-output">
                         <span class="loading">SCANNING_NETWORK...</span>
+                    </div>
+                </section>
+
+                <!-- Traffic Stats -->
+                <section class="panel" id="trafficStats">
+                    <h2><i class="icon">📊</i> TRAFFIC_ANALYSIS</h2>
+                    <div class="terminal-output" id="trafficLog">
+                        <span class="status-indicator">WAITING_FOR_DATA...</span>
+                        <div style="margin-top: 10px; font-size: 0.8rem; color: #666;">
+                            * IP Tracking requires external logger integration in activate.sh
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Loot Box -->
+                <section class="panel" id="lootBox">
+                    <h2><i class="icon">💰</i> LOOT_BOX</h2>
+                    <div class="toolbar">
+                        <button id="refreshLoot" class="cyber-btn small">REFRESH</button>
+                    </div>
+                    <div id="lootList" class="file-grid">
+                        <!-- Loot files injected here -->
                     </div>
                 </section>
 
@@ -63,6 +94,27 @@
             <div class="footer-text">SYSTEM_READY // V1.1.0</div>
         </footer>
     </div>
+
+    <!-- Editor Modal -->
+    <div id="editorModal" class="modal hidden">
+        <div class="modal-content panel">
+            <div class="modal-header">
+                <h2 id="editorTitle">EDIT_PAYLOAD</h2>
+                <button class="close-btn" onclick="closeEditor()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('sh')">activate.sh</button>
+                    <button class="tab-btn" onclick="switchTab('ps1')">activate.ps1</button>
+                </div>
+                <textarea id="editorContent" spellcheck="false"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="cyber-btn" onclick="saveEditorContent()">SAVE_CHANGES</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 

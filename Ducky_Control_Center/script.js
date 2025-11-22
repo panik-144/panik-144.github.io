@@ -10,7 +10,13 @@ const elements = {
     statusIndicator: document.getElementById('connectionStatus'),
     activePayloadDisplay: document.getElementById('activePayloadsList'),
     fileList: document.getElementById('fileList'),
-    refreshBtn: document.getElementById('refreshFiles')
+    refreshBtn: document.getElementById('refreshFiles'),
+    killSwitch: document.getElementById('killSwitch'),
+    lootList: document.getElementById('lootList'),
+    refreshLootBtn: document.getElementById('refreshLoot'),
+    editorModal: document.getElementById('editorModal'),
+    editorContent: document.getElementById('editorContent'),
+    editorTitle: document.getElementById('editorTitle')
 };
 
 // State
@@ -19,6 +25,13 @@ let state = {
     repo: localStorage.getItem('ducky_repo') || '',
     activePayload: 'UNKNOWN'
 };
+
+// Editor State
+let editorState = {
+    attackName: null,
+    fileType: 'sh'
+};
+
 
 // Initialization
 function init() {
@@ -66,6 +79,10 @@ function setupEventListeners() {
         loadFiles();
         checkActivePayload();
     });
+
+    // New Listeners
+    elements.killSwitch.addEventListener('click', () => activatePayload('Cleanup'));
+    elements.refreshLootBtn.addEventListener('click', loadLoot);
 }
 
 // GitHub API Functions

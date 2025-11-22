@@ -393,3 +393,68 @@ footer {
     border-top: 1px solid #222;
     padding-top: 20px;
 }
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: var(--accent);
+}
+
+.modal-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-footer {
+    margin-top: 20px;
+    text-align: right;
+}
+
+/* Danger Button */
+.cyber-btn.danger {
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.cyber-btn.danger:hover {
+    background: #ff0000;
+    color: #fff;
+    box-shadow: 0 0 20px #ff0000;
+}
