@@ -1,2 +1,4 @@
-# ATTACK: Rickroll
-open -a Calculator
+# ATTACK: Cleanup
+rm -f inject.bin
+history -c
+echo "System Cleaned."
