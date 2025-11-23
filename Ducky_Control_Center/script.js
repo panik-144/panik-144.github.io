@@ -227,7 +227,7 @@ async function loadTemplates() {
     select.innerHTML = '<option value="">-- UPLOAD LOCAL FILE --</option>';
 
     try {
-        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Rubber_Ducky/Templates`, {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Ducky_Control_Center/Templates`, {
             headers: { 'Authorization': `Bearer ${state.token}` }
         });
 
