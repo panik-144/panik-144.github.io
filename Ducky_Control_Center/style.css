@@ -249,9 +249,18 @@ select {
     cursor: pointer;
 }
 
+/* Style the options (Chrome/Firefox/Edge) */
+option {
+    background-color: #000;
+    color: var(--primary);
+    padding: 10px;
+}
+
 input[type="file"] {
     padding: 5px;
     cursor: pointer;
+    color: var(--primary);
+    /* Make filename text green */
 }
 
 input[type="file"]::file-selector-button {
@@ -353,11 +362,19 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.3s ease;
+}
+
+.file-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.1);
+    background: rgba(0, 255, 65, 0.05);
 }
 
 .file-card.active {
     border-color: var(--primary);
-    background: rgba(0, 255, 65, 0.05);
+    background: rgba(0, 255, 65, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
 }
 
 .file-name {
