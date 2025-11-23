@@ -332,9 +332,10 @@ window.saveEditorContent = async function () {
 
     try {
         await updateFile(path, content, `Update ${filename} for ${editorState.attackName}`);
-        alert('SAVED_SUCCESSFULLY');
+        // Removed success alert
+        closeEditor(); // Close editor on success
     } catch (e) {
-        alert('SAVE_FAILED: ' + e.message);
+        console.error('SAVE_FAILED: ' + e.message); // Log error
     }
 };
 
@@ -391,7 +392,7 @@ async function deleteFile(path, message) {
 }
 
 async function triggerKillSwitch() {
-    if (!confirm('WARNING: KILL SWITCH ENGAGED.\nThis will DELETE remote/activate.sh and remote/activate.ps1.\nAre you sure?')) return;
+    // Removed confirm check
 
     const btn = elements.killSwitch;
     const originalText = btn.innerText;
@@ -402,12 +403,12 @@ async function triggerKillSwitch() {
         await deleteFile('Rubber_Ducky/remote/activate.sh', 'KILL SWITCH: Deleted activate.sh');
         await deleteFile('Rubber_Ducky/remote/activate.ps1', 'KILL SWITCH: Deleted activate.ps1');
 
-        alert('KILL SWITCH EXECUTED SUCCESSFULLY');
+        // Removed success alert
         state.activePayload = 'KILLED';
         elements.activePayloadDisplay.innerHTML = '<span class="status-indicator error">KILLED</span>';
         loadFiles(); // Refresh file list to show inactive state
     } catch (e) {
-        alert('KILL SWITCH FAILED: ' + e.message);
+        console.error('KILL SWITCH FAILED: ' + e.message); // Log error instead of alert
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -415,7 +416,7 @@ async function triggerKillSwitch() {
 }
 
 window.activatePayload = async function (attackName) {
-    if (!confirm(`ACTIVATE MODULE: ${attackName}?\nThis will overwrite remote/activate.sh and remote/activate.ps1.`)) return;
+    // Removed confirm check
 
     try {
         // 1. Fetch source scripts
@@ -441,11 +442,11 @@ window.activatePayload = async function (attackName) {
         await updateFile('Rubber_Ducky/remote/activate.sh', newShContent, `Activate ${attackName} (sh)`);
         await updateFile('Rubber_Ducky/remote/activate.ps1', newPs1Content, `Activate ${attackName} (ps1)`);
 
-        alert(`SUCCESS: Activated ${attackName}`);
+        // Removed success alert
         checkActivePayload();
         loadFiles();
     } catch (e) {
-        alert(`FAILED: ${e.message}`);
+        console.error(`FAILED: ${e.message}`); // Log error instead of alert
     }
 };
 
