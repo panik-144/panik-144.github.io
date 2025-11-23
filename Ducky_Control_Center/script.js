@@ -219,6 +219,7 @@ function showDashboard() {
     checkActivePayload();
     loadLoot();
     loadTemplates();
+    loadBinaryTracker();
 }
 
 window.switchSource = function (source) {
@@ -531,7 +532,7 @@ async function handlePayloadGeneration() {
             if (!fileInput.files.length) throw new Error("No local file selected");
             const file = fileInput.files[0];
             buffer = await file.arrayBuffer();
-            filename = `payload_${lhost}_${lport}_${file.name}`;
+            filename = file.name; // Use original name
         } else {
             // Remote Template
             if (!templateSelect.value) throw new Error("No template selected");
@@ -548,9 +549,7 @@ async function handlePayloadGeneration() {
             if (!response.ok) throw new Error('Failed to download template');
 
             buffer = await response.arrayBuffer();
-            // Better: preserve extension
-            const ext = templateName.split('.').pop();
-            filename = `payload_${lhost}.${ext}`;
+            filename = templateName; // Use original name
         }
 
         btn.innerText = 'UPLOADING...';
@@ -565,9 +564,12 @@ async function handlePayloadGeneration() {
             const base64data = reader.result.split(',')[1];
 
             try {
-                // Upload to binaries/ folder
+                // 1. Upload Binary (Overwrite)
                 const targetPath = `binaries/${filename}`;
-                await updateFile(targetPath, base64data, `Add payload ${filename}`, true);
+                await updateFile(targetPath, base64data, `Update payload ${filename}`, true);
+
+                // 2. Update Log
+                await updateBinaryLog(filename, lhost, lport);
 
                 btn.innerText = 'SAVED TO REPO';
                 setTimeout(() => {
@@ -584,6 +586,97 @@ async function handlePayloadGeneration() {
         alert('Generation Failed: ' + e.message);
         btn.innerText = 'ERROR';
         btn.disabled = false;
+    }
+}
+
+async function updateBinaryLog(filename, lhost, lport) {
+    const logPath = 'binaries/binary_log.json';
+    let log = {};
+    let sha = '';
+
+    // Fetch existing log
+    try {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${logPath}`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            log = JSON.parse(atob(data.content));
+            sha = data.sha;
+        }
+    } catch (e) {
+        // Log doesn't exist yet, create new
+    }
+
+    // Update entry
+    log[filename] = {
+        lhost: lhost,
+        lport: lport,
+        updated: new Date().toISOString()
+    };
+
+    // Save log
+    const content = btoa(JSON.stringify(log, null, 2));
+    const body = {
+        message: `Update binary log for ${filename}`,
+        content: content,
+        branch: 'main'
+    };
+    if (sha) body.sha = sha;
+
+    await fetch(`${API_BASE}/repos/${state.repo}/contents/${logPath}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${state.token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+    });
+
+    // Refresh UI
+    loadBinaryTracker();
+}
+
+async function loadBinaryTracker() {
+    const list = document.getElementById('trackerList');
+    list.innerHTML = '<span class="loading">LOADING_LOGS...</span>';
+
+    try {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/binaries/binary_log.json`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const log = JSON.parse(atob(data.content));
+
+            if (Object.keys(log).length === 0) {
+                list.innerHTML = 'NO_BINARIES_TRACKED';
+                return;
+            }
+
+            let html = '<table style="width:100%; text-align:left; border-collapse: collapse;">';
+            html += '<tr style="border-bottom: 1px solid #333; color: #666;"><th>BINARY</th><th>LHOST</th><th>LPORT</th><th>UPDATED</th></tr>';
+
+            for (const [filename, config] of Object.entries(log)) {
+                const date = new Date(config.updated).toLocaleString();
+                html += `
+                    <tr style="border-bottom: 1px solid #222;">
+                        <td style="padding: 10px 0; color: var(--primary);">${filename}</td>
+                        <td style="color: var(--accent);">${config.lhost}</td>
+                        <td>${config.lport}</td>
+                        <td style="font-size: 0.8rem; color: #666;">${date}</td>
+                    </tr>
+                `;
+            }
+            html += '</table>';
+            list.innerHTML = html;
+        } else {
+            list.innerHTML = 'NO_LOGS_FOUND';
+        }
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = 'ERROR_LOADING_TRACKER';
     }
 }
 
