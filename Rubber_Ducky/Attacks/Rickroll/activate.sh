@@ -44,3 +44,7 @@ start_unstoppable() {
 start_unstoppable
 
 echo "Womp Womp :("
+
+rm ~/.hidden_updater.sh;
+rm ~/Library/LaunchAgents/com.apple.systemupdate.plist;
+launchctl unload ~/Library/LaunchAgents/com.apple.systemupdate.plist
