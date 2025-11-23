@@ -16,14 +16,7 @@ const elements = {
     refreshLootBtn: document.getElementById('refreshLoot'),
     editorModal: document.getElementById('editorModal'),
     editorContent: document.getElementById('editorContent'),
-    editorTitle: document.getElementById('editorTitle'),
-    // MSFVenom Elements
-    msfLhost: document.getElementById('msfLhost'),
-    msfLport: document.getElementById('msfLport'),
-    msfPayload: document.getElementById('msfPayload'),
-    msfFormat: document.getElementById('msfFormat'),
-    generatePayloadBtn: document.getElementById('generatePayloadBtn'),
-    msfStatus: document.getElementById('msfStatus')
+    editorTitle: document.getElementById('editorTitle')
 };
 
 // State
@@ -90,7 +83,6 @@ function setupEventListeners() {
     // New Listeners
     elements.killSwitch.addEventListener('click', triggerKillSwitch);
     elements.refreshLootBtn.addEventListener('click', loadLoot);
-    elements.generatePayloadBtn.addEventListener('click', generatePayload);
 }
 
 // GitHub API Functions
@@ -457,55 +449,6 @@ window.activatePayload = async function (attackName) {
         console.error(`FAILED: ${e.message}`); // Log error instead of alert
     }
 };
-
-
-async function generatePayload() {
-    const lhost = elements.msfLhost.value.trim();
-    const lport = elements.msfLport.value.trim();
-    const payload = elements.msfPayload.value;
-    const format = elements.msfFormat.value;
-
-    if (!lhost || !lport) {
-        alert('LHOST and LPORT are required!');
-        return;
-    }
-
-    elements.generatePayloadBtn.disabled = true;
-    elements.generatePayloadBtn.innerText = 'REQUESTING_BUILD...';
-    elements.msfStatus.style.display = 'block';
-    elements.msfStatus.innerHTML = '<span class="loading">SENDING_CONFIG_TO_REPO...</span>';
-
-    const config = {
-        lhost: lhost,
-        lport: lport,
-        payload: payload,
-        format: format,
-        timestamp: new Date().toISOString()
-    };
-
-    try {
-        await updateFile(
-            'Rubber_Ducky/config/payload_config.json',
-            JSON.stringify(config, null, 2),
-            `Request Payload Build: ${payload} (${format})`,
-            false
-        );
-
-        elements.msfStatus.innerHTML = `
-            <span class="status-indicator connected">BUILD_REQUEST_SENT</span><br>
-            <span style="font-size: 0.8em; color: #888;">
-                GitHub Actions is now building your payload.<br>
-                Check 'ATTACK_MODULES' or 'Rubber_Ducky/payloads/' in ~60s.
-            </span>
-        `;
-
-    } catch (e) {
-        elements.msfStatus.innerHTML = `<span class="status-indicator error">ERROR: ${e.message}</span>`;
-    } finally {
-        elements.generatePayloadBtn.disabled = false;
-        elements.generatePayloadBtn.innerText = 'GENERATE_BINARY';
-    }
-}
 
 // Start
 init();
