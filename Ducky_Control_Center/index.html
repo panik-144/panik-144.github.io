@@ -82,12 +82,23 @@
                     <h2><i class="icon">🏭</i> PAYLOAD_FACTORY</h2>
                     <div class="factory-grid">
                         <div class="input-group">
-                            <label>SELECT_TEMPLATE</label>
-                            <select id="templateSelect">
-                                <option value="">-- UPLOAD LOCAL FILE --</option>
-                            </select>
-                            <div style="margin-top: 5px; font-size: 0.8rem; color: #666;">OR UPLOAD:</div>
-                            <input type="file" id="templateFile" accept=".exe,.bin" style="margin-top: 5px;">
+                            <label>SOURCE</label>
+                            <div class="tabs" style="margin-bottom: 10px;">
+                                <button class="tab-btn active" id="btnSourceLib"
+                                    onclick="switchSource('lib')">TEMPLATE_LIBRARY</button>
+                                <button class="tab-btn" id="btnSourceLocal"
+                                    onclick="switchSource('local')">UPLOAD_LOCAL</button>
+                            </div>
+
+                            <div id="sourceLib">
+                                <select id="templateSelect">
+                                    <option value="" disabled selected>LOADING...</option>
+                                </select>
+                            </div>
+
+                            <div id="sourceLocal" class="hidden">
+                                <input type="file" id="templateFile" accept=".exe,.bin,.macho,.elf">
+                            </div>
                         </div>
                         <div class="input-group">
                             <label>LHOST (Target IP)</label>

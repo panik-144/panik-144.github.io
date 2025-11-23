@@ -221,10 +221,28 @@ function showDashboard() {
     loadTemplates();
 }
 
+window.switchSource = function (source) {
+    const libDiv = document.getElementById('sourceLib');
+    const localDiv = document.getElementById('sourceLocal');
+    const btnLib = document.getElementById('btnSourceLib');
+    const btnLocal = document.getElementById('btnSourceLocal');
+
+    if (source === 'lib') {
+        libDiv.classList.remove('hidden');
+        localDiv.classList.add('hidden');
+        btnLib.classList.add('active');
+        btnLocal.classList.remove('active');
+    } else {
+        libDiv.classList.add('hidden');
+        localDiv.classList.remove('hidden');
+        btnLib.classList.remove('active');
+        btnLocal.classList.add('active');
+    }
+};
+
 async function loadTemplates() {
     const select = document.getElementById('templateSelect');
-    // Keep the first option (Upload Local)
-    select.innerHTML = '<option value="">-- UPLOAD LOCAL FILE --</option>';
+    select.innerHTML = '<option value="" disabled selected>SELECT_TEMPLATE...</option>';
 
     try {
         const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Ducky_Control_Center/Templates`, {
@@ -235,9 +253,10 @@ async function loadTemplates() {
             const files = await response.json();
             if (Array.isArray(files)) {
                 files.forEach(file => {
-                    if (file.name.endsWith('.exe') || file.name.endsWith('.bin')) {
+                    // Allow exe, bin, macho, elf, etc.
+                    if (file.name.match(/\.(exe|bin|macho|elf|out)$/i)) {
                         const option = document.createElement('option');
-                        option.value = file.path; // Store full path
+                        option.value = file.path;
                         option.innerText = file.name;
                         select.appendChild(option);
                     }
@@ -246,6 +265,7 @@ async function loadTemplates() {
         }
     } catch (e) {
         console.error('Failed to load templates:', e);
+        select.innerHTML = '<option>ERROR_LOADING_TEMPLATES</option>';
     }
 }
 
@@ -490,6 +510,9 @@ async function handlePayloadGeneration() {
     const placeholder = document.getElementById('placeholderIp').value;
     const btn = document.getElementById('generatePayloadBtn');
 
+    // Check active source
+    const isLocal = document.getElementById('btnSourceLocal').classList.contains('active');
+
     let buffer = null;
     let filename = '';
 
@@ -503,32 +526,31 @@ async function handlePayloadGeneration() {
 
     try {
         // 1. Determine Source
-        if (fileInput.files.length > 0) {
+        if (isLocal) {
             // Local File
+            if (!fileInput.files.length) throw new Error("No local file selected");
             const file = fileInput.files[0];
             buffer = await file.arrayBuffer();
-            filename = `payload_${lhost}_${lport}.exe`;
-        } else if (templateSelect.value) {
+            filename = `payload_${lhost}_${lport}_${file.name}`;
+        } else {
             // Remote Template
+            if (!templateSelect.value) throw new Error("No template selected");
             const path = templateSelect.value;
             const templateName = templateSelect.options[templateSelect.selectedIndex].text;
 
             const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
                 headers: {
                     'Authorization': `Bearer ${state.token}`,
-                    'Accept': 'application/vnd.github.v3.raw' // Request raw content
+                    'Accept': 'application/vnd.github.v3.raw'
                 }
             });
 
             if (!response.ok) throw new Error('Failed to download template');
 
             buffer = await response.arrayBuffer();
-            filename = `payload_${templateName.replace('.exe', '')}_${lhost}.exe`;
-        } else {
-            alert('Please select a Template or Upload a File.');
-            btn.innerText = 'GENERATE_PAYLOAD';
-            btn.disabled = false;
-            return;
+            // Better: preserve extension
+            const ext = templateName.split('.').pop();
+            filename = `payload_${lhost}.${ext}`;
         }
 
         btn.innerText = 'PATCHING...';
