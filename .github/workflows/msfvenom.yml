@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    container:
-      image: metasploitframework/metasploit-framework:latest
     
     steps:
       - name: Checkout code
@@ -26,6 +24,12 @@ jobs:
           echo "LPORT=$(echo $CONFIG | jq -r .lport)" >> $GITHUB_OUTPUT
           echo "FORMAT=$(echo $CONFIG | jq -r .format)" >> $GITHUB_OUTPUT
 
+      - name: Install Metasploit Framework
+        run: |
+          curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall
+          chmod 755 msfinstall
+          ./msfinstall
+
       - name: Generate Payload
         run: |
           mkdir -p Rubber_Ducky/payloads
@@ -38,7 +42,6 @@ jobs:
 
       - name: Commit and Push
         run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE
           git config --global user.name 'Ducky Bot'
           git config --global user.email 'bot@ducky.c2'
           git add Rubber_Ducky/payloads/

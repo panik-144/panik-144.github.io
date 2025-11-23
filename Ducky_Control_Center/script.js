@@ -23,10 +23,7 @@ const elements = {
     msfPayload: document.getElementById('msfPayload'),
     msfFormat: document.getElementById('msfFormat'),
     generatePayloadBtn: document.getElementById('generatePayloadBtn'),
-    msfStatus: document.getElementById('msfStatus'),
-    // Payload List
-    payloadList: document.getElementById('payloadList'),
-    refreshPayloadsBtn: document.getElementById('refreshPayloads')
+    msfStatus: document.getElementById('msfStatus')
 };
 
 // State
@@ -84,17 +81,16 @@ function setupEventListeners() {
             btn.disabled = false;
         }
     });
+
     elements.refreshBtn.addEventListener('click', () => {
         loadFiles();
         checkActivePayload();
-        loadPayloads();
     });
 
     // New Listeners
     elements.killSwitch.addEventListener('click', triggerKillSwitch);
     elements.refreshLootBtn.addEventListener('click', loadLoot);
     elements.generatePayloadBtn.addEventListener('click', generatePayload);
-    elements.refreshPayloadsBtn.addEventListener('click', loadPayloads);
 }
 
 // GitHub API Functions
@@ -227,7 +223,6 @@ function showDashboard() {
     loadFiles();
     checkActivePayload();
     loadLoot();
-    loadPayloads();
 }
 
 function renderFiles(files) {
@@ -297,47 +292,6 @@ function renderLoot(files) {
                 </div>
             `;
         elements.lootList.appendChild(card);
-    });
-});
-}
-
-async function loadPayloads() {
-    elements.payloadList.innerHTML = '<div class="loading">SCANNING_PAYLOADS...</div>';
-    try {
-        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/Rubber_Ducky/payloads`, {
-            headers: { 'Authorization': `Bearer ${state.token}` }
-        });
-        if (response.ok) {
-            const files = await response.json();
-            renderPayloads(files);
-        } else {
-            elements.payloadList.innerHTML = '<div class="terminal-output">NO_PAYLOADS_FOUND</div>';
-        }
-    } catch (e) {
-        elements.payloadList.innerHTML = `<div class="terminal-output error">ERROR: ${e.message}</div>`;
-    }
-}
-
-function renderPayloads(files) {
-    elements.payloadList.innerHTML = '';
-    if (!Array.isArray(files) || files.length === 0) {
-        elements.payloadList.innerHTML = '<div class="terminal-output">NO_PAYLOADS_FOUND</div>';
-        return;
-    }
-
-    files.forEach(file => {
-        const card = document.createElement('div');
-        card.className = 'file-card';
-        card.innerHTML = `
-                <div class="file-info">
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-size">${(file.size / 1024).toFixed(2)} KB</div>
-                </div>
-                <div class="file-actions">
-                    <a href="${file.download_url}" class="cyber-btn small">DOWNLOAD</a>
-                </div>
-            `;
-        elements.payloadList.appendChild(card);
     });
 }
 
