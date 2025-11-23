@@ -36,7 +36,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/data" \
             metasploitframework/metasploit-framework \
-            msfvenom -p ${{ steps.config.outputs.PAYLOAD }} \
+            ./msfvenom -p ${{ steps.config.outputs.PAYLOAD }} \
             LHOST=${{ steps.config.outputs.LHOST }} \
             LPORT=${{ steps.config.outputs.LPORT }} \
             -f ${{ steps.config.outputs.FORMAT }} \
