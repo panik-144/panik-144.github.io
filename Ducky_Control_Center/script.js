@@ -81,7 +81,7 @@ function setupEventListeners() {
     });
 
     // New Listeners
-    elements.killSwitch.addEventListener('click', () => activatePayload('Cleanup'));
+    elements.killSwitch.addEventListener('click', triggerKillSwitch);
     elements.refreshLootBtn.addEventListener('click', loadLoot);
 }
 
@@ -346,6 +346,74 @@ function saveCredentials(repo, token) {
 }
 
 // Logic Functions
+async function deleteFile(path, message) {
+    try {
+        // Get SHA first
+        let sha = '';
+        const current = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (current.ok) {
+            const data = await current.json();
+            sha = data.sha;
+        } else {
+            return false; // File doesn't exist
+        }
+
+        const body = {
+            message: message,
+            sha: sha,
+            branch: 'main'
+        };
+
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/${path}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${state.token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || response.statusText);
+        }
+
+        return true;
+    } catch (e) {
+        throw e;
+    }
+}
+
+async function triggerKillSwitch() {
+    if (!confirm('WARNING: KILL SWITCH ENGAGED.\nThis will DELETE remote/activate.sh and remote/activate.ps1.\nAre you sure?')) return;
+
+    const btn = elements.killSwitch;
+    const originalText = btn.innerText;
+    btn.innerText = 'KILLING...';
+    btn.disabled = true;
+
+    try {
+        await deleteFile('Rubber_Ducky/remote/activate.sh', 'KILL SWITCH: Deleted activate.sh');
+        await deleteFile('Rubber_Ducky/remote/activate.ps1', 'KILL SWITCH: Deleted activate.ps1');
+
+        alert('KILL SWITCH EXECUTED SUCCESSFULLY');
+        state.activePayload = 'KILLED';
+        elements.activePayloadDisplay.innerHTML = '<span class="status-indicator error">KILLED</span>';
+        loadFiles(); // Refresh file list to show inactive state
+    } catch (e) {
+        alert('KILL SWITCH FAILED: ' + e.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
 window.activatePayload = async function (attackName) {
     if (!confirm(`ACTIVATE MODULE: ${attackName}?\nThis will overwrite remote/activate.sh and remote/activate.ps1.`)) return;
 
