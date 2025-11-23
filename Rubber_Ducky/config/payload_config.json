@@ -1,7 +1,0 @@
-{
-  "lhost": "10.10.10.10",
-  "lport": "4444",
-  "payload": "windows/meterpreter/reverse_tcp",
-  "format": "exe",
-  "timestamp": "2025-11-23T21:30:17.088Z"
-}
