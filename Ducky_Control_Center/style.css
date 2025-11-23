@@ -297,6 +297,13 @@ textarea {
     min-height: 100px;
 }
 
+.factory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
 .file-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

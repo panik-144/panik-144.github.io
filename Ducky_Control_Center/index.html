@@ -77,6 +77,32 @@
                     </div>
                 </section>
 
+                <!-- Payload Factory -->
+                <section class="panel" id="payloadFactory">
+                    <h2><i class="icon">🏭</i> PAYLOAD_FACTORY</h2>
+                    <div class="factory-grid">
+                        <div class="input-group">
+                            <label>TEMPLATE_BINARY (.exe)</label>
+                            <input type="file" id="templateFile" accept=".exe,.bin">
+                        </div>
+                        <div class="input-group">
+                            <label>LHOST (Target IP)</label>
+                            <input type="text" id="lhost" placeholder="192.168.1.X">
+                        </div>
+                        <div class="input-group">
+                            <label>LPORT</label>
+                            <input type="number" id="lport" placeholder="4444" value="4444">
+                        </div>
+                        <div class="input-group">
+                            <label>PLACEHOLDER_IP (In Template)</label>
+                            <input type="text" id="placeholderIp" value="000.000.000.000">
+                        </div>
+                    </div>
+                    <div class="toolbar" style="margin-top: 15px;">
+                        <button id="generatePayloadBtn" class="cyber-btn">GENERATE_PAYLOAD</button>
+                    </div>
+                </section>
+
                 <!-- File Manager -->
                 <section class="panel" id="fileManager">
                     <h2><i class="icon">📂</i> ATTACK_MODULES</h2>
@@ -115,6 +141,7 @@
         </div>
     </div>
 
+    <script src="patcher.js"></script>
     <script src="script.js"></script>
 </body>
 
