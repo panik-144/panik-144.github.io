@@ -66,6 +66,39 @@
                     </div>
                 </section>
 
+                <!-- Payload Generator -->
+                <section class="panel" id="payloadGenerator">
+                    <h2><i class="icon">☣</i> MSFVENOM_BUILDER</h2>
+                    <div class="input-group">
+                        <label>LHOST (Attacker IP)</label>
+                        <input type="text" id="msfLhost" placeholder="10.10.10.10">
+                    </div>
+                    <div class="input-group">
+                        <label>LPORT</label>
+                        <input type="number" id="msfLport" value="4444">
+                    </div>
+                    <div class="input-group">
+                        <label>PAYLOAD</label>
+                        <select id="msfPayload" class="cyber-input">
+                            <option value="windows/meterpreter/reverse_tcp">windows/meterpreter/reverse_tcp</option>
+                            <option value="linux/x64/meterpreter/reverse_tcp">linux/x64/meterpreter/reverse_tcp</option>
+                            <option value="osx/x64/meterpreter/reverse_tcp">osx/x64/meterpreter/reverse_tcp</option>
+                            <option value="cmd/unix/reverse_netcat">cmd/unix/reverse_netcat</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>FORMAT</label>
+                        <select id="msfFormat" class="cyber-input">
+                            <option value="exe">exe (Windows)</option>
+                            <option value="elf">elf (Linux)</option>
+                            <option value="macho">macho (Mac)</option>
+                            <option value="py">python</option>
+                        </select>
+                    </div>
+                    <button id="generatePayloadBtn" class="cyber-btn">GENERATE_BINARY</button>
+                    <div id="msfStatus" class="terminal-output" style="margin-top: 10px; display: none;"></div>
+                </section>
+
                 <!-- Loot Box -->
                 <section class="panel" id="lootBox">
                     <h2><i class="icon">💰</i> LOOT_BOX</h2>
