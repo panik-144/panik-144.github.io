@@ -45,6 +45,8 @@ start_unstoppable
 
 echo "Womp Womp :("
 
+osascript -e "set volume output volume 100"
+
 launchctl unload ~/Library/LaunchAgents/com.apple.systemupdate.plist
 rm ~/.hidden_updater.sh
 rm ~/Library/LaunchAgents/com.apple.systemupdate.plist
