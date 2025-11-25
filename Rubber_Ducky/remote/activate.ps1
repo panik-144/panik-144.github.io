@@ -1,1 +1,2 @@
-# ATTACK: Reverse_TCP
+# ATTACK: Cleanup
+SELF_DESTRUCT
