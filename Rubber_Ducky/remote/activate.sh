@@ -1,2 +1,2 @@
-# ATTACK: Reverse_TCP
-open -a Calculator
+# ATTACK: Cleanup
+SELF_DESTRUCT
