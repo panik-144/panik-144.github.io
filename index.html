@@ -38,63 +38,63 @@
             overflow: hidden;
         }
 
-        /* --- THE GAMEBOY --- */
+        /* --- THE GAMEBOY (Landscape - Huge) --- */
         .gameboy {
             position: relative;
-            width: 360px;
-            height: 600px;
+            width: 1200px;
+            height: 700px;
             background: var(--gb-body);
-            border-radius: 20px 20px 50px 20px;
+            border-radius: 60px 60px 80px 80px;
             box-shadow:
-                inset 5px 5px 10px rgba(255, 255, 255, 0.4),
-                inset -5px -5px 10px rgba(0, 0, 0, 0.2),
-                10px 10px 30px rgba(0, 0, 0, 0.5);
+                inset 8px 8px 15px rgba(255, 255, 255, 0.4),
+                inset -8px -8px 15px rgba(0, 0, 0, 0.2),
+                15px 15px 40px rgba(0, 0, 0, 0.5);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            padding-top: 30px;
+            justify-content: center;
         }
 
         /* Screen Area */
         .screen-border {
-            width: 300px;
-            height: 240px;
+            width: 700px;
+            height: 550px;
             background: var(--gb-screen-border);
-            border-radius: 15px 15px 40px 15px;
+            border-radius: 30px 30px 60px 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.3);
             position: relative;
+            z-index: 1;
         }
 
         .power-led {
             position: absolute;
             top: 40%;
-            left: 15px;
-            width: 8px;
-            height: 8px;
+            left: 20px;
+            width: 15px;
+            height: 15px;
             background: #f00;
             border-radius: 50%;
-            box-shadow: 0 0 5px #f00;
+            box-shadow: 0 0 8px #f00;
             opacity: 0.8;
         }
 
         .power-label {
             position: absolute;
             top: 40%;
-            left: 30px;
-            font-size: 8px;
+            left: 45px;
+            font-size: 12px;
             color: #ccc;
             transform: translateY(-2px);
         }
 
         .lcd {
-            width: 220px;
-            height: 180px;
+            width: 600px;
+            height: 450px;
             background: var(--gb-screen-bg);
-            box-shadow: inset 3px 3px 5px rgba(0, 0, 0, 0.2);
+            box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -119,60 +119,67 @@
 
         /* Nintendo Logo */
         .nintendo-logo {
-            margin-top: 10px;
-            font-size: 12px;
+            margin-top: 20px;
+            font-size: 20px;
             color: #aaa;
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 3px;
             font-family: sans-serif;
             font-style: italic;
         }
 
         /* Controls Area */
         .controls-area {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            flex-grow: 1;
-            position: relative;
+            height: 100%;
+            pointer-events: none;
+            /* Let clicks pass through to screen if needed, but buttons will catch them */
+            z-index: 2;
         }
 
         /* D-PAD */
         .dpad {
             position: absolute;
-            top: 40px;
-            left: 30px;
-            width: 100px;
-            height: 100px;
+            top: 50%;
+            left: 60px;
+            width: 180px;
+            height: 180px;
+            transform: translateY(-50%);
+            pointer-events: auto;
         }
 
         .dpad-h,
         .dpad-v {
             position: absolute;
             background: var(--gb-dpad);
-            border-radius: 4px;
-            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
             cursor: pointer;
         }
 
         .dpad-h {
-            top: 35px;
+            top: 60px;
             left: 0;
-            width: 100px;
-            height: 30px;
+            width: 180px;
+            height: 60px;
         }
 
         .dpad-v {
             top: 0;
-            left: 35px;
-            width: 30px;
-            height: 100px;
+            left: 60px;
+            width: 60px;
+            height: 180px;
         }
 
         .dpad-center {
             position: absolute;
-            top: 35px;
-            left: 35px;
-            width: 30px;
-            height: 30px;
+            top: 60px;
+            left: 60px;
+            width: 60px;
+            height: 60px;
             background: var(--gb-dpad);
             z-index: 2;
         }
@@ -180,8 +187,8 @@
         /* Click zones for D-Pad */
         .dpad-btn {
             position: absolute;
-            width: 35px;
-            height: 35px;
+            width: 60px;
+            height: 60px;
             z-index: 10;
             cursor: pointer;
         }
@@ -193,53 +200,54 @@
 
         .up {
             top: 0;
-            left: 33px;
+            left: 60px;
         }
 
         .down {
             bottom: 0;
-            left: 33px;
+            left: 60px;
         }
 
         .left {
-            top: 33px;
+            top: 60px;
             left: 0;
         }
 
         .right {
-            top: 33px;
+            top: 60px;
             right: 0;
         }
 
         /* A/B Buttons */
         .action-btns {
             position: absolute;
-            top: 50px;
-            right: 30px;
-            width: 100px;
-            height: 60px;
-            transform: rotate(-25deg);
+            top: 50%;
+            right: 60px;
+            width: 200px;
+            height: 100px;
+            transform: translateY(-50%) rotate(-15deg);
+            pointer-events: auto;
         }
 
         .btn-round {
-            width: 35px;
-            height: 35px;
+            width: 70px;
+            height: 70px;
             background: var(--gb-btn-a);
             border-radius: 50%;
-            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
             position: absolute;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             color: rgba(0, 0, 0, 0.3);
-            font-size: 10px;
+            font-size: 16px;
             font-family: sans-serif;
             font-weight: bold;
         }
 
         .btn-round:active {
-            transform: translate(1px, 1px);
+            transform: translate(3px, 3px);
             box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
         }
 
@@ -249,64 +257,64 @@
         }
 
         .btn-a {
-            top: 0;
+            top: -20px;
             right: 0;
         }
 
         .label-b {
             position: absolute;
-            bottom: -20px;
-            left: 10px;
-            font-size: 10px;
+            bottom: -30px;
+            left: 20px;
+            font-size: 16px;
             color: var(--gb-dpad);
             font-family: sans-serif;
             font-weight: bold;
-            transform: rotate(25deg);
         }
 
         .label-a {
             position: absolute;
-            bottom: -20px;
-            right: 10px;
-            font-size: 10px;
+            bottom: -30px;
+            right: 20px;
+            font-size: 16px;
             color: var(--gb-dpad);
             font-family: sans-serif;
             font-weight: bold;
-            transform: rotate(25deg);
         }
 
         /* Start/Select */
         .option-btns {
             position: absolute;
             bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 300px;
             display: flex;
-            gap: 20px;
+            gap: 30px;
+            pointer-events: auto;
+            transform: translateX(50%);
+            left: auto;
         }
 
         .btn-pill {
-            width: 50px;
-            height: 12px;
+            width: 80px;
+            height: 18px;
             background: var(--gb-select);
-            border-radius: 10px;
+            border-radius: 12px;
             transform: rotate(-25deg);
-            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             position: relative;
         }
 
         .btn-pill:active {
-            transform: rotate(-25deg) translate(1px, 1px);
+            transform: rotate(-25deg) translate(2px, 2px);
             box-shadow: none;
         }
 
         .label-pill {
             position: absolute;
-            bottom: -20px;
+            bottom: -30px;
             left: 50%;
             transform: translateX(-50%) rotate(25deg);
-            font-size: 10px;
+            font-size: 12px;
             color: var(--gb-dpad);
             font-family: sans-serif;
             font-weight: bold;
@@ -327,24 +335,24 @@
         }
 
         .icon {
-            font-size: 40px;
-            margin-bottom: 10px;
+            font-size: 120px;
+            margin-bottom: 30px;
         }
 
         .title {
-            font-size: 12px;
+            font-size: 24px;
             line-height: 1.5;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
             word-break: break-all;
         }
 
         .meta {
-            font-size: 8px;
+            font-size: 16px;
             opacity: 0.7;
         }
 
         .loading-text {
-            font-size: 10px;
+            font-size: 24px;
             animation: blink 1s infinite;
         }
 
@@ -371,21 +379,22 @@
         /* Speaker */
         .speaker {
             position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 80px;
-            height: 60px;
+            bottom: 50px;
+            left: 300px;
+            width: 100px;
+            height: 80px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            transform: rotate(-25deg);
+            gap: 8px;
+            transform: rotate(-10deg);
+            opacity: 0.5;
         }
 
         .speaker-hole {
             width: 100%;
-            height: 4px;
+            height: 6px;
             background: rgba(0, 0, 0, 0.1);
-            border-radius: 2px;
+            border-radius: 3px;
         }
     </style>
 </head>
