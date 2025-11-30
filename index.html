@@ -1,189 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PANIK-144 // CONSOLE</title>
+    <title>PANIK BOY</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121212;
-            --console-bg: #2a2a2a;
-            --screen-bg: #000;
-            --accent: #ff0055;
-            --accent-glow: #ff005580;
-            --text-main: #fff;
-            --text-dim: #888;
-            --card-width: 280px;
-            --card-height: 380px;
+            --gb-body: #c0c0c0;
+            --gb-screen-border: #777;
+            --gb-screen-bg: #9bbc0f;
+            --gb-screen-dark: #0f380f;
+            --gb-btn-a: #9f2238;
+            --gb-btn-b: #9f2238;
+            --gb-dpad: #333;
+            --gb-select: #999;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Share Tech Mono', monospace;
-            overflow: hidden;
+            background-color: #222;
             height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            user-select: none;
-        }
-
-        /* CRT Effect */
-        .scanline {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2));
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
-            pointer-events: none;
-            z-index: 11;
-        }
-
-        /* Header */
-        header {
-            position: absolute;
-            top: 40px;
-            text-align: center;
-            z-index: 5;
-        }
-        h1 {
             font-family: 'Press Start 2P', cursive;
-            font-size: 2rem;
-            color: var(--accent);
-            text-shadow: 0 0 10px var(--accent-glow);
-            margin: 0;
-            letter-spacing: 2px;
-        }
-        .subtitle {
-            margin-top: 10px;
-            font-size: 1rem;
-            color: var(--text-dim);
-        }
-
-        /* Carousel Container */
-        .carousel-container {
-            position: relative;
-            width: 100%;
-            height: 500px;
-            perspective: 1000px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .carousel {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform-style: preserve-3d;
-            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .card {
-            position: absolute;
-            width: var(--card-width);
-            height: var(--card-height);
-            background: var(--console-bg);
-            border: 2px solid #444;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            transition: all 0.5s ease;
-            cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            opacity: 0.4;
-            transform: scale(0.8);
             overflow: hidden;
         }
 
-        .card.active {
-            opacity: 1;
-            transform: scale(1.1) translateZ(50px);
-            border-color: var(--accent);
-            box-shadow: 0 0 30px var(--accent-glow);
-            z-index: 5;
+        /* --- THE GAMEBOY --- */
+        .gameboy {
+            position: relative;
+            width: 360px;
+            height: 600px;
+            background: var(--gb-body);
+            border-radius: 20px 20px 50px 20px;
+            box-shadow:
+                inset 5px 5px 10px rgba(255, 255, 255, 0.4),
+                inset -5px -5px 10px rgba(0, 0, 0, 0.2),
+                10px 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 30px;
         }
 
-        .card.prev { transform: translateX(-320px) scale(0.8) rotateY(15deg); }
-        .card.next { transform: translateX(320px) scale(0.8) rotateY(-15deg); }
-        .card.prev-2 { transform: translateX(-600px) scale(0.6) rotateY(25deg); opacity: 0.1; }
-        .card.next-2 { transform: translateX(600px) scale(0.6) rotateY(-25deg); opacity: 0.1; }
+        /* Screen Area */
+        .screen-border {
+            width: 300px;
+            height: 240px;
+            background: var(--gb-screen-border);
+            border-radius: 15px 15px 40px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
 
-        /* Card Content */
-        .card-art {
+        .power-led {
+            position: absolute;
+            top: 40%;
+            left: 15px;
+            width: 8px;
+            height: 8px;
+            background: #f00;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #f00;
+            opacity: 0.8;
+        }
+
+        .power-label {
+            position: absolute;
+            top: 40%;
+            left: 30px;
+            font-size: 8px;
+            color: #ccc;
+            transform: translateY(-2px);
+        }
+
+        .lcd {
+            width: 220px;
+            height: 180px;
+            background: var(--gb-screen-bg);
+            box-shadow: inset 3px 3px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            color: var(--gb-screen-dark);
+        }
+
+        /* Scanlines for LCD */
+        .lcd::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 60%;
-            background: #222;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Nintendo Logo */
+        .nintendo-logo {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #aaa;
+            font-weight: bold;
+            letter-spacing: 1px;
+            font-family: sans-serif;
+            font-style: italic;
+        }
+
+        /* Controls Area */
+        .controls-area {
+            width: 100%;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* D-PAD */
+        .dpad {
+            position: absolute;
+            top: 40px;
+            left: 30px;
+            width: 100px;
+            height: 100px;
+        }
+
+        .dpad-h,
+        .dpad-v {
+            position: absolute;
+            background: var(--gb-dpad);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .dpad-h {
+            top: 35px;
+            left: 0;
+            width: 100px;
+            height: 30px;
+        }
+
+        .dpad-v {
+            top: 0;
+            left: 35px;
+            width: 30px;
+            height: 100px;
+        }
+
+        .dpad-center {
+            position: absolute;
+            top: 35px;
+            left: 35px;
+            width: 30px;
+            height: 30px;
+            background: var(--gb-dpad);
+            z-index: 2;
+        }
+
+        /* Click zones for D-Pad */
+        .dpad-btn {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .dpad-btn:active {
+            opacity: 0.5;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .up {
+            top: 0;
+            left: 33px;
+        }
+
+        .down {
+            bottom: 0;
+            left: 33px;
+        }
+
+        .left {
+            top: 33px;
+            left: 0;
+        }
+
+        .right {
+            top: 33px;
+            right: 0;
+        }
+
+        /* A/B Buttons */
+        .action-btns {
+            position: absolute;
+            top: 50px;
+            right: 30px;
+            width: 100px;
+            height: 60px;
+            transform: rotate(-25deg);
+        }
+
+        .btn-round {
+            width: 35px;
+            height: 35px;
+            background: var(--gb-btn-a);
+            border-radius: 50%;
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+            position: absolute;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 2px solid #444;
-            font-size: 3rem;
-        }
-        .card.active .card-art {
-            background: #333;
-        }
-        .card-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 1.2rem;
-            margin: 20px 10px;
-            line-height: 1.4;
-            color: #fff;
-        }
-        .card-meta {
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            margin-bottom: 20px;
+            color: rgba(0, 0, 0, 0.3);
+            font-size: 10px;
+            font-family: sans-serif;
+            font-weight: bold;
         }
 
-        /* Controls Hint */
-        .controls {
+        .btn-round:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-b {
+            bottom: 0;
+            left: 0;
+        }
+
+        .btn-a {
+            top: 0;
+            right: 0;
+        }
+
+        .label-b {
+            position: absolute;
+            bottom: -20px;
+            left: 10px;
+            font-size: 10px;
+            color: var(--gb-dpad);
+            font-family: sans-serif;
+            font-weight: bold;
+            transform: rotate(25deg);
+        }
+
+        .label-a {
+            position: absolute;
+            bottom: -20px;
+            right: 10px;
+            font-size: 10px;
+            color: var(--gb-dpad);
+            font-family: sans-serif;
+            font-weight: bold;
+            transform: rotate(25deg);
+        }
+
+        /* Start/Select */
+        .option-btns {
             position: absolute;
             bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            gap: 40px;
-            font-size: 1.2rem;
-            color: var(--text-dim);
-        }
-        .key {
-            background: #333;
-            padding: 5px 10px;
-            border-radius: 4px;
-            color: #fff;
-            border-bottom: 2px solid #111;
+            gap: 20px;
         }
 
-        /* Loading */
-        .loading {
-            font-family: 'Press Start 2P', cursive;
+        .btn-pill {
+            width: 50px;
+            height: 12px;
+            background: var(--gb-select);
+            border-radius: 10px;
+            transform: rotate(-25deg);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .btn-pill:active {
+            transform: rotate(-25deg) translate(1px, 1px);
+            box-shadow: none;
+        }
+
+        .label-pill {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%) rotate(25deg);
+            font-size: 10px;
+            color: var(--gb-dpad);
+            font-family: sans-serif;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* --- SCREEN CONTENT --- */
+        .carousel-item {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .carousel-item.active {
+            display: flex;
+        }
+
+        .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .meta {
+            font-size: 8px;
+            opacity: 0.7;
+        }
+
+        .loading-text {
+            font-size: 10px;
             animation: blink 1s infinite;
         }
-        @keyframes blink { 50% { opacity: 0; } }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
 
         /* Konami Flash */
-        .konami-flash {
+        .flash-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -195,66 +367,135 @@
             z-index: 100;
             transition: opacity 0.1s;
         }
+
+        /* Speaker */
+        .speaker {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 80px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transform: rotate(-25deg);
+        }
+
+        .speaker-hole {
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="scanline"></div>
-    <div class="vignette"></div>
-    <div class="konami-flash" id="flash"></div>
+    <div class="flash-overlay" id="flash"></div>
 
-    <header>
-        <h1>PANIK OS</h1>
-        <div class="subtitle">SELECT CARTRIDGE</div>
-    </header>
-
-    <div class="carousel-container">
-        <div class="carousel" id="carousel">
-            <div class="loading">INSERT COIN...</div>
+    <div class="gameboy">
+        <div class="screen-border">
+            <div class="power-led"></div>
+            <div class="power-label">BATTERY</div>
+            <div class="lcd" id="lcd">
+                <div class="loading-text">INSERT CARTRIDGE...</div>
+            </div>
+            <div class="nintendo-logo">Nintendo GAME BOY</div>
         </div>
-    </div>
 
-    <div class="controls">
-        <div><span class="key">←</span> <span class="key">→</span> SELECT</div>
-        <div><span class="key">ENTER</span> START</div>
+        <div class="controls-area">
+            <!-- D-PAD -->
+            <div class="dpad">
+                <div class="dpad-v"></div>
+                <div class="dpad-h"></div>
+                <div class="dpad-center"></div>
+                <div class="dpad-btn up" onclick="handleInput('ArrowUp')"></div>
+                <div class="dpad-btn down" onclick="handleInput('ArrowDown')"></div>
+                <div class="dpad-btn left" onclick="handleInput('ArrowLeft')"></div>
+                <div class="dpad-btn right" onclick="handleInput('ArrowRight')"></div>
+            </div>
+
+            <!-- A/B Buttons -->
+            <div class="action-btns">
+                <div class="btn-round btn-b" onclick="handleInput('b')"></div>
+                <div class="label-b">B</div>
+                <div class="btn-round btn-a" onclick="handleInput('a')"></div>
+                <div class="label-a">A</div>
+            </div>
+
+            <!-- Start/Select -->
+            <div class="option-btns">
+                <div class="btn-pill" onclick="handleInput('Select')">
+                    <div class="label-pill">SELECT</div>
+                </div>
+                <div class="btn-pill" onclick="handleInput('Enter')">
+                    <div class="label-pill">START</div>
+                </div>
+            </div>
+
+            <!-- Speaker -->
+            <div class="speaker">
+                <div class="speaker-hole"></div>
+                <div class="speaker-hole"></div>
+                <div class="speaker-hole"></div>
+                <div class="speaker-hole"></div>
+                <div class="speaker-hole"></div>
+                <div class="speaker-hole"></div>
+            </div>
+        </div>
     </div>
 
     <script>
         const REPO = "panik-144/panik-144.github.io";
         const BRANCH = "main";
-        // HIDDEN: Add any other folders you want to hide
         const HIDDEN = ["Ducky_Control_Center", ".git", ".github", "old_index.html", "CNAME", "LICENSE", "README.md"];
-        
+
         let items = [];
         let currentIndex = 0;
-        const carousel = document.getElementById('carousel');
+        const lcd = document.getElementById('lcd');
 
         // --- Konami Code ---
         const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
         let konamiIndex = 0;
 
-        document.addEventListener('keydown', (e) => {
-            // Konami Logic
-            if (e.key.toLowerCase() === konamiCode[konamiIndex].toLowerCase() || e.code === konamiCode[konamiIndex]) {
+        // --- Input Handling ---
+        function handleInput(key) {
+            // Normalize key
+            const k = key.length === 1 ? key.toLowerCase() : key;
+
+            // 1. Konami Logic
+            const target = konamiCode[konamiIndex];
+            const targetNorm = target.length === 1 ? target.toLowerCase() : target;
+
+            if (k === targetNorm) {
                 konamiIndex++;
                 if (konamiIndex === konamiCode.length) {
                     activateKonami();
                     konamiIndex = 0;
+                    return;
                 }
             } else {
                 konamiIndex = 0;
             }
 
-            // Navigation Logic
+            // 2. Navigation Logic
             if (items.length === 0) return;
-            
-            if (e.key === "ArrowRight") {
-                rotate(1);
-            } else if (e.key === "ArrowLeft") {
-                rotate(-1);
-            } else if (e.key === "Enter") {
+
+            if (key === "ArrowRight") {
+                currentIndex = (currentIndex + 1) % items.length;
+                renderScreen();
+            } else if (key === "ArrowLeft") {
+                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                renderScreen();
+            } else if (key === "Enter" || key === "a") { // Start or A to launch
                 launchGame();
             }
+        }
+
+        // Keyboard Listener
+        document.addEventListener('keydown', (e) => {
+            handleInput(e.key);
         });
 
         function activateKonami() {
@@ -269,18 +510,12 @@
         function launchGame() {
             const item = items[currentIndex];
             if (item) {
-                // Flash effect
-                document.body.style.transform = "scale(1.1)";
-                document.body.style.transition = "transform 0.2s";
+                // Blink effect
+                lcd.style.background = "#0f380f";
                 setTimeout(() => {
                     window.location.href = item.path;
-                }, 200);
+                }, 100);
             }
-        }
-
-        function rotate(direction) {
-            currentIndex = (currentIndex + direction + items.length) % items.length;
-            renderCarousel();
         }
 
         async function init() {
@@ -288,14 +523,11 @@
                 const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}`);
                 if (!res.ok) throw new Error("API Error");
                 const data = await res.json();
-                
+
                 // Filter and process
                 items = data.tree.filter(f => {
-                    // Hide hidden files/folders
                     if (HIDDEN.includes(f.path)) return false;
-                    // Hide dotfiles
                     if (f.path.startsWith('.')) return false;
-                    // Show directories and HTML files (except index)
                     return f.type === "tree" || (f.path.endsWith('.html') && f.path !== 'index.html');
                 }).map(f => ({
                     name: f.path.replace(/_/g, ' ').replace('.html', ''),
@@ -304,71 +536,37 @@
                 }));
 
                 if (items.length > 0) {
-                    renderCarousel();
+                    renderScreen();
                 } else {
-                    carousel.innerHTML = '<div class="loading">NO CARTRIDGES FOUND</div>';
+                    lcd.innerHTML = '<div class="loading-text">NO GAMES FOUND</div>';
                 }
 
             } catch (err) {
                 console.error(err);
-                carousel.innerHTML = '<div class="loading">SYSTEM ERROR</div>';
+                lcd.innerHTML = '<div class="loading-text">LINK ERROR</div>';
             }
         }
 
-        function renderCarousel() {
-            carousel.innerHTML = '';
-            
-            items.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // Determine position class
-                let diff = (index - currentIndex);
-                // Handle wrap-around for visual positioning
-                // We need to handle the case where the array wraps around
-                // e.g. if length is 5, index 0 and index 4 are neighbors
-                
-                // Simple distance check for small arrays
-                if (items.length > 2) {
-                     if (diff < -items.length / 2) diff += items.length;
-                     if (diff > items.length / 2) diff -= items.length;
-                }
+        function renderScreen() {
+            const item = items[currentIndex];
 
-                if (diff === 0) card.classList.add('active');
-                else if (diff === -1) card.classList.add('prev');
-                else if (diff === 1) card.classList.add('next');
-                else if (diff === -2) card.classList.add('prev-2');
-                else if (diff === 2) card.classList.add('next-2');
-                else {
-                    card.style.opacity = 0; 
-                    card.style.pointerEvents = 'none';
-                }
+            // Icon Logic
+            let icon = "💾";
+            if (item.name.toLowerCase().includes("ducky")) icon = "🦆";
+            if (item.name.toLowerCase().includes("binaries")) icon = "010";
+            if (item.name.toLowerCase().includes("audio")) icon = "🎵";
 
-                // Icon based on name
-                let icon = "💾";
-                if (item.name.toLowerCase().includes("ducky")) icon = "🦆";
-                if (item.name.toLowerCase().includes("binaries")) icon = "01";
-                if (item.name.toLowerCase().includes("audio")) icon = "🎵";
-
-                card.innerHTML = `
-                    <div class="card-art">${icon}</div>
-                    <div class="card-title">${item.name}</div>
-                    <div class="card-meta">[${item.type}]</div>
-                `;
-                
-                card.onclick = () => {
-                    if (diff === 0) launchGame();
-                    else {
-                        // Calculate shortest direction
-                        rotate(diff); 
-                    }
-                };
-
-                carousel.appendChild(card);
-            });
+            lcd.innerHTML = `
+                <div class="carousel-item active">
+                    <div class="icon">${icon}</div>
+                    <div class="title">${item.name}</div>
+                    <div class="meta">&lt; ${currentIndex + 1}/${items.length} &gt;</div>
+                </div>
+            `;
         }
 
         init();
     </script>
 </body>
+
 </html>
