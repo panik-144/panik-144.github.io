@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PANIK BOY</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -395,6 +395,153 @@
             height: 6px;
             background: rgba(0, 0, 0, 0.1);
             border-radius: 3px;
+        }
+
+        /* --- RESPONSIVE DESIGN --- */
+
+        /* 1. Scale down for smaller desktops/tablets (Landscape) */
+        @media (max-width: 1250px) {
+            .gameboy {
+                transform: scale(0.8);
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .gameboy {
+                transform: scale(0.6);
+            }
+        }
+
+        /* 2. Mobile Portrait (Vertical Layout) */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .gameboy {
+                width: 90vw;
+                height: 160vw;
+                /* Aspect ratio for vertical GB */
+                max-height: 90vh;
+                flex-direction: column;
+                border-radius: 20px 20px 50px 20px;
+                padding-top: 30px;
+                transform: none;
+                /* Reset scale */
+            }
+
+            .screen-border {
+                width: 80%;
+                height: 45%;
+                border-radius: 15px 15px 40px 15px;
+                margin-bottom: 20px;
+            }
+
+            .lcd {
+                width: 80%;
+                height: 70%;
+            }
+
+            .controls-area {
+                position: relative;
+                width: 100%;
+                height: 50%;
+                pointer-events: auto;
+            }
+
+            .dpad {
+                top: 40px;
+                left: 30px;
+                width: 120px;
+                height: 120px;
+                transform: none;
+            }
+
+            .dpad-h {
+                top: 40px;
+                left: 0;
+                width: 120px;
+                height: 40px;
+            }
+
+            .dpad-v {
+                top: 0;
+                left: 40px;
+                width: 40px;
+                height: 120px;
+            }
+
+            .dpad-center {
+                top: 40px;
+                left: 40px;
+                width: 40px;
+                height: 40px;
+            }
+
+            .dpad-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .up {
+                top: 0;
+                left: 40px;
+            }
+
+            .down {
+                bottom: 0;
+                left: 40px;
+            }
+
+            .left {
+                top: 40px;
+                left: 0;
+            }
+
+            .right {
+                top: 40px;
+                right: 0;
+            }
+
+            .action-btns {
+                top: 50px;
+                right: 30px;
+                width: 120px;
+                height: 80px;
+                transform: rotate(-25deg);
+            }
+
+            .btn-round {
+                width: 45px;
+                height: 45px;
+            }
+
+            .btn-a {
+                top: 0;
+                right: 0;
+            }
+
+            .btn-b {
+                bottom: 0;
+                left: 0;
+            }
+
+            .option-btns {
+                bottom: 60px;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+            }
+
+            .speaker {
+                bottom: 30px;
+                right: 30px;
+                left: auto;
+                transform: rotate(-25deg);
+            }
+        }
+
+        /* 3. Mobile Landscape (Scaled Down) */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .gameboy {
+                transform: scale(0.45);
+            }
         }
     </style>
 </head>
