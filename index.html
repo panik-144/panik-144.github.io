@@ -451,8 +451,11 @@
         const BRANCH = "main";
         const HIDDEN = ["Ducky_Control_Center", ".git", ".github", "old_index.html", "CNAME", "LICENSE", "README.md"];
 
-        let items = [];
+        let allFiles = [];
+        let currentItems = [];
         let currentIndex = 0;
+        let currentPath = "";
+
         const lcd = document.getElementById('lcd');
 
         // --- Konami Code ---
@@ -480,16 +483,20 @@
             }
 
             // 2. Navigation Logic
-            if (items.length === 0) return;
+            if (currentItems.length === 0) return;
 
             if (key === "ArrowRight") {
-                currentIndex = (currentIndex + 1) % items.length;
+                currentIndex = (currentIndex + 1) % currentItems.length;
                 renderScreen();
             } else if (key === "ArrowLeft") {
-                currentIndex = (currentIndex - 1 + items.length) % items.length;
+                currentIndex = (currentIndex - 1 + currentItems.length) % currentItems.length;
                 renderScreen();
-            } else if (key === "Enter" || key === "a") { // Start or A to launch
-                launchGame();
+            } else if (key === "Enter" || key === "a") { // Start or A to launch/enter
+                enterItem();
+            } else if (key === "b") { // B to go back
+                if (currentPath !== "") {
+                    goBack();
+                }
             }
         }
 
@@ -507,39 +514,43 @@
             }, 200);
         }
 
-        function launchGame() {
-            const item = items[currentIndex];
-            if (item) {
-                // Blink effect
-                lcd.style.background = "#0f380f";
-                setTimeout(() => {
+        function enterItem() {
+            const item = currentItems[currentIndex];
+            if (!item) return;
+
+            // Blink effect
+            lcd.style.background = "#0f380f";
+            setTimeout(() => {
+                lcd.style.background = "#9bbc0f"; // Reset bg
+
+                if (item.type === "DIR") {
+                    // Enter Folder
+                    currentPath = item.path;
+                    updateCurrentItems();
+                } else {
+                    // Open File
                     window.location.href = item.path;
-                }, 100);
-            }
+                }
+            }, 100);
+        }
+
+        function goBack() {
+            // Go up one level
+            const parts = currentPath.split("/");
+            parts.pop();
+            currentPath = parts.join("/");
+            updateCurrentItems();
         }
 
         async function init() {
             try {
-                const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}`);
+                // Fetch RECURSIVE tree
+                const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
                 if (!res.ok) throw new Error("API Error");
                 const data = await res.json();
 
-                // Filter and process
-                items = data.tree.filter(f => {
-                    if (HIDDEN.includes(f.path)) return false;
-                    if (f.path.startsWith('.')) return false;
-                    return f.type === "tree" || (f.path.endsWith('.html') && f.path !== 'index.html');
-                }).map(f => ({
-                    name: f.path.replace(/_/g, ' ').replace('.html', ''),
-                    path: f.path,
-                    type: f.type === "tree" ? "DIR" : "FILE"
-                }));
-
-                if (items.length > 0) {
-                    renderScreen();
-                } else {
-                    lcd.innerHTML = '<div class="loading-text">NO GAMES FOUND</div>';
-                }
+                allFiles = data.tree;
+                updateCurrentItems();
 
             } catch (err) {
                 console.error(err);
@@ -547,20 +558,60 @@
             }
         }
 
+        function updateCurrentItems() {
+            // Filter files for currentPath
+            currentItems = allFiles.filter(f => {
+                // 1. Hide hidden files/folders (recursively)
+                if (HIDDEN.some(h => f.path.startsWith(h))) return false;
+                if (f.path.split('/').some(p => p.startsWith('.'))) return false; // Hide dotfiles
+
+                // 2. Check if file is in currentPath
+                const parentPath = f.path.substring(0, f.path.lastIndexOf("/"));
+                const fDir = f.path.includes("/") ? parentPath : "";
+
+                return fDir === currentPath;
+            }).map(f => ({
+                name: f.path.split('/').pop(),
+                path: f.path,
+                type: f.type === "tree" ? "DIR" : "FILE"
+            }));
+
+            // Sort: DIRs first, then FILEs
+            currentItems.sort((a, b) => {
+                if (a.type === b.type) return a.name.localeCompare(b.name);
+                return a.type === "DIR" ? -1 : 1;
+            });
+
+            currentIndex = 0;
+            renderScreen();
+        }
+
         function renderScreen() {
-            const item = items[currentIndex];
+            if (currentItems.length === 0) {
+                lcd.innerHTML = '<div class="loading-text">EMPTY FOLDER</div>';
+                return;
+            }
+
+            const item = currentItems[currentIndex];
 
             // Icon Logic
-            let icon = "💾";
+            let icon = "📄";
+            if (item.type === "DIR") icon = "📁";
             if (item.name.toLowerCase().includes("ducky")) icon = "🦆";
             if (item.name.toLowerCase().includes("binaries")) icon = "010";
             if (item.name.toLowerCase().includes("audio")) icon = "🎵";
+            if (item.name.endsWith(".png") || item.name.endsWith(".jpg")) icon = "🖼️";
+            if (item.name.endsWith(".html")) icon = "🌐";
+
+            // Path Display (Breadcrumb style or just current folder)
+            const displayPath = currentPath === "" ? "ROOT" : "> " + currentPath.split('/').pop();
 
             lcd.innerHTML = `
                 <div class="carousel-item active">
+                    <div style="font-size: 8px; margin-bottom: 5px; opacity: 0.6;">${displayPath}</div>
                     <div class="icon">${icon}</div>
                     <div class="title">${item.name}</div>
-                    <div class="meta">&lt; ${currentIndex + 1}/${items.length} &gt;</div>
+                    <div class="meta">&lt; ${currentIndex + 1}/${currentItems.length} &gt;</div>
                 </div>
             `;
         }
