@@ -642,11 +642,11 @@ let pyodide = null;
 
 async function loadPyodideIfNeeded() {
     if (pyodide) return;
-    
+
     const output = document.getElementById('syntaxOutput');
     output.classList.remove('hidden');
     output.innerText = 'LOADING_PYODIDE...';
-    
+
     try {
         // Load Pyodide script dynamically
         if (!window.loadPyodide) {
@@ -658,7 +658,7 @@ async function loadPyodideIfNeeded() {
                 document.head.appendChild(script);
             });
         }
-        
+
         pyodide = await loadPyodide();
         output.innerText = 'PYODIDE_LOADED';
         setTimeout(() => output.classList.add('hidden'), 2000);
@@ -673,14 +673,14 @@ async function checkSyntax() {
     const output = document.getElementById('syntaxOutput');
     output.classList.remove('hidden');
     output.innerText = 'CHECKING_SYNTAX...';
-    
+
     try {
         await loadPyodideIfNeeded();
-        
+
         // Redirect stdout/stderr
         pyodide.setStdout({ batched: (msg) => console.log(msg) });
         pyodide.setStderr({ batched: (msg) => console.log(msg) });
-        
+
         // Try to compile (not run) to check syntax
         pyodide.runPython(`
 import codeop
@@ -689,7 +689,7 @@ try:
 except Exception as e:
     raise e
 `);
-        
+
         output.innerHTML = '<span class="status-indicator connected">SYNTAX_OK</span>';
     } catch (e) {
         // Parse error message
@@ -706,30 +706,30 @@ async function compileScript() {
     const name = document.getElementById('scriptName').value || 'payload';
     const btn = document.getElementById('compileScriptBtn');
     const status = document.getElementById('compilerStatus');
-    
+
     if (!code.trim()) {
         alert('Please enter some Python code.');
         return;
     }
-    
+
     btn.disabled = true;
     btn.innerText = 'COMMITTING...';
     status.innerText = 'UPLOADING_SOURCE...';
-    
+
     try {
         // 1. Upload Source File
         const path = `Rubber_Ducky/payloads/src/${name}.py`;
-        await updateFile(path, code, `Add source for ${name}`, true); // Treat as raw text, updateFile handles base64
-        
+        // Fix: Pass false for isBase64 so it gets encoded
+        await updateFile(path, code, `Add source for ${name}`, false);
+
         status.innerText = 'WAITING_FOR_BUILD...';
         btn.innerText = 'BUILDING...';
-        
+
         // 2. Poll for results (simple version: just tell user to wait)
-        // Ideally we'd check Actions API, but for now we'll just wait a bit or let user refresh
         alert(`Source uploaded to ${path}.\n\nGitHub Actions will now compile this into binaries.\n\nPlease wait 1-3 minutes and then check the LOOT_BOX or BINARY_TRACKER.`);
-        
+
         status.innerText = 'BUILD_TRIGGERED';
-        
+
     } catch (e) {
         console.error(e);
         status.innerText = 'ERROR';
@@ -743,6 +743,49 @@ async function compileScript() {
 // Add Event Listeners for Compiler
 document.getElementById('checkSyntaxBtn').addEventListener('click', checkSyntax);
 document.getElementById('compileScriptBtn').addEventListener('click', compileScript);
+
+async function loadBinaryTracker() {
+    const list = document.getElementById('trackerList');
+    list.innerHTML = '<span class="loading">LOADING_LOGS...</span>';
+
+    try {
+        const response = await fetch(`${API_BASE}/repos/${state.repo}/contents/binaries/binary_log.json`, {
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const log = JSON.parse(atob(data.content));
+
+            if (Object.keys(log).length === 0) {
+                list.innerHTML = 'NO_BINARIES_TRACKED';
+                return;
+            }
+
+            let html = '<table style="width:100%; text-align:left; border-collapse: collapse;">';
+            html += '<tr style="border-bottom: 1px solid #333; color: #666;"><th>BINARY</th><th>LHOST</th><th>LPORT</th><th>UPDATED</th></tr>';
+
+            for (const [filename, config] of Object.entries(log)) {
+                const date = new Date(config.updated).toLocaleString();
+                html += `
+                    <tr style="border-bottom: 1px solid #222;">
+                        <td style="padding: 10px 0; color: var(--primary);">${filename}</td>
+                        <td style="color: var(--accent);">${config.lhost}</td>
+                        <td>${config.lport}</td>
+                        <td style="font-size: 0.8rem; color: #666;">${date}</td>
+                    </tr>
+                `;
+            }
+            html += '</table>';
+            list.innerHTML = html;
+        } else {
+            list.innerHTML = 'NO_LOGS_FOUND';
+        }
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = 'ERROR_LOADING_TRACKER';
+    }
+}
 
 
 // Start
