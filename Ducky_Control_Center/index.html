@@ -126,6 +126,33 @@
                     </div>
                 </section>
 
+                <!-- Script Compiler -->
+                <section class="panel" id="scriptCompiler">
+                    <h2><i class="icon">🐍</i> SCRIPT_COMPILER</h2>
+                    <div class="factory-grid">
+                        <div class="input-group" style="grid-column: 1 / -1;">
+                            <label>PYTHON_SCRIPT_SOURCE</label>
+                            <textarea id="pythonEditor" class="code-editor" spellcheck="false" placeholder="# Write your Python script here...
+import sys
+print('Hello from Ducky!')"></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>TARGET_FILENAME</label>
+                            <input type="text" id="scriptName" placeholder="payload" value="payload">
+                        </div>
+                        <div class="input-group">
+                            <label>COMPILATION_STATUS</label>
+                            <div id="compilerStatus" class="status-indicator">READY</div>
+                        </div>
+                    </div>
+                    <div class="toolbar" style="margin-top: 15px;">
+                        <button id="checkSyntaxBtn" class="cyber-btn small">CHECK_SYNTAX</button>
+                        <button id="compileScriptBtn" class="cyber-btn">COMPILE_TO_BINARY</button>
+                    </div>
+                    <div id="syntaxOutput" class="terminal-output hidden"
+                        style="margin-top: 10px; max-height: 100px; overflow-y: auto;"></div>
+                </section>
+
                 <!-- File Manager -->
                 <section class="panel" id="fileManager">
                     <h2><i class="icon">📂</i> ATTACK_MODULES</h2>

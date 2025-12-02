@@ -1,0 +1,106 @@
+name: Compile Payload
+
+on:
+  push:
+    paths:
+      - 'Rubber_Ducky/payloads/src/**.py'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Build Binary
+      shell: bash
+      run: |
+        # Find the python file that triggered the workflow (or just build all in src)
+        # For simplicity, we assume the latest changed file or just build all .py files in src
+        # But to avoid re-building everything, let's just build the specific file if possible.
+        # However, getting the specific file in a matrix is tricky without passing inputs.
+        # Let's just build all .py files in src and overwrite.
+        
+        cd Rubber_Ducky/payloads/src
+        for file in *.py; do
+          if [ -f "$file" ]; then
+            echo "Building $file..."
+            pyinstaller --onefile "$file"
+          fi
+        done
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: binaries-${{ matrix.os }}
+        path: Rubber_Ducky/payloads/src/dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Move Binaries to Loot
+      run: |
+        mkdir -p binaries
+        
+        # Process Ubuntu (ELF)
+        if [ -d "binaries-ubuntu-latest" ]; then
+          cp binaries-ubuntu-latest/* binaries/
+          # Rename to .elf for clarity if no extension
+          for f in binaries/*; do
+            if [[ "$f" != *.* ]]; then
+              mv "$f" "$f.elf"
+            fi
+          done
+        fi
+
+        # Process Windows (EXE)
+        if [ -d "binaries-windows-latest" ]; then
+          cp binaries-windows-latest/*.exe binaries/
+        fi
+
+        # Process macOS (Mach-O)
+        if [ -d "binaries-macos-latest" ]; then
+          cp binaries-macos-latest/* binaries/
+          # Rename to .macho for clarity
+          for f in binaries/*; do
+            # Avoid renaming .exe or .elf again
+            if [[ "$f" != *.exe ]] && [[ "$f" != *.elf ]] && [[ "$f" != *.macho ]]; then
+              mv "$f" "$f.macho"
+            fi
+          done
+        fi
+        
+        ls -R binaries
+
+    - name: Commit Binaries
+      run: |
+        git config --global user.name 'Ducky Compiler Bot'
+        git config --global user.email 'bot@ducky.c2'
+        git add binaries/*
+        git commit -m "Add compiled binaries" || echo "No changes to commit"
+        git push
