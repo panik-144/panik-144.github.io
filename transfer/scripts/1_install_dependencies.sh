@@ -28,6 +28,9 @@ print_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
 }
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Main installation function
 install_dependencies() {
     echo -e "${GREEN}"
@@ -37,11 +40,13 @@ install_dependencies() {
     echo "╚═══════════════════════════════════════╝"
     echo -e "${NC}"
     
+    print_status "Script directory: $SCRIPT_DIR"
+    
     print_status "Updating package lists..."
     apt-get update
     
     print_status "Installing system packages..."
-    apt-get install -y hostapd dnsmasq iptables python3 python3-pip python3-venv iptables-persistent
+    apt-get install -y hostapd dnsmasq iptables python3 python3-pip python3-venv iptables-persistent net-tools
     
     if [ $? -eq 0 ]; then
         print_status "System packages installed successfully"
@@ -51,11 +56,14 @@ install_dependencies() {
     fi
     
     # Setup Flask virtual environment
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    
     if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-        print_status "Creating Python virtual environment..."
+        print_status "Creating Python virtual environment in $SCRIPT_DIR/.venv..."
         python3 -m venv "$SCRIPT_DIR/.venv"
+        
+        if [ $? -ne 0 ]; then
+            print_error "Failed to create virtual environment"
+            exit 1
+        fi
         
         print_status "Installing Flask..."
         "$SCRIPT_DIR/.venv/bin/pip" install flask
@@ -67,7 +75,17 @@ install_dependencies() {
             exit 1
         fi
     else
-        print_warning "Virtual environment already exists, skipping..."
+        print_warning "Virtual environment already exists at $SCRIPT_DIR/.venv"
+        print_status "Verifying Flask installation..."
+        
+        # Try to upgrade/install Flask in existing venv
+        "$SCRIPT_DIR/.venv/bin/pip" install --upgrade flask
+        
+        if [ $? -eq 0 ]; then
+            print_status "Flask verified/updated successfully"
+        else
+            print_warning "Could not verify Flask installation"
+        fi
     fi
     
     # Stop services (they'll be configured later)
@@ -78,6 +96,7 @@ install_dependencies() {
     
     echo ""
     print_status "All dependencies installed successfully!"
+    print_status "Virtual environment location: $SCRIPT_DIR/.venv"
     echo -e "${GREEN}Next step: Run ${YELLOW}./2_configure_services.sh${NC}"
 }
 

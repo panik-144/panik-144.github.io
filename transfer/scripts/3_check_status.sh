@@ -43,14 +43,17 @@ print_info() {
 ERRORS=0
 WARNINGS=0
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Check system packages
 check_packages() {
     echo -e "\n${BLUE}=== Checking System Packages ===${NC}"
     
-    local packages=("hostapd" "dnsmasq" "iptables" "python3" "python3-pip" "python3-venv")
+    local packages=("hostapd" "dnsmasq" "iptables" "python3")
     
     for package in "${packages[@]}"; do
-        if dpkg -l | grep -q "^ii  $package "; then
+        if command -v $package &> /dev/null || dpkg -l 2>/dev/null | grep -q "^ii  $package "; then
             print_status "$package is installed"
         else
             print_error "$package is NOT installed"
@@ -63,33 +66,48 @@ check_packages() {
 check_venv() {
     echo -e "\n${BLUE}=== Checking Python Environment ===${NC}"
     
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    print_info "Script directory: $SCRIPT_DIR"
     
     if [ -d "$SCRIPT_DIR/.venv" ]; then
-        print_status "Virtual environment exists"
+        print_status "Virtual environment exists at $SCRIPT_DIR/.venv"
         
+        # Find the actual python binary (handle different versions)
+        PYTHON_BIN=""
         if [ -f "$SCRIPT_DIR/.venv/bin/python3" ]; then
-            print_status "Python3 binary found in venv"
-        else
-            print_error "Python3 binary NOT found in venv"
-            ((ERRORS++))
+            PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python3"
+        elif [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+            PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python"
         fi
         
-        if "$SCRIPT_DIR/.venv/bin/pip" list | grep -q "Flask"; then
-            print_status "Flask is installed in venv"
+        if [ -n "$PYTHON_BIN" ] && [ -x "$PYTHON_BIN" ]; then
+            print_status "Python binary found: $PYTHON_BIN"
+            
+            # Check Flask installation
+            if "$PYTHON_BIN" -c "import flask" 2>/dev/null; then
+                print_status "Flask is installed in venv"
+                FLASK_VERSION=$("$PYTHON_BIN" -c "import flask; print(flask.__version__)" 2>/dev/null)
+                print_info "Flask version: $FLASK_VERSION"
+            else
+                print_error "Flask is NOT installed in venv"
+                print_info "Run: $SCRIPT_DIR/.venv/bin/pip install flask"
+                ((ERRORS++))
+            fi
         else
-            print_error "Flask is NOT installed in venv"
+            print_error "Python binary NOT found or not executable in venv"
+            print_info "Searched for: $SCRIPT_DIR/.venv/bin/python3"
+            print_info "Try recreating venv: rm -rf $SCRIPT_DIR/.venv && python3 -m venv $SCRIPT_DIR/.venv"
             ((ERRORS++))
         fi
     else
-        print_error "Virtual environment does NOT exist"
+        print_error "Virtual environment does NOT exist at $SCRIPT_DIR/.venv"
+        print_info "Run: ./1_install_dependencies.sh"
         ((ERRORS++))
     fi
     
     if [ -f "$SCRIPT_DIR/app.py" ]; then
         print_status "app.py exists"
     else
-        print_error "app.py NOT found"
+        print_error "app.py NOT found in $SCRIPT_DIR"
         ((ERRORS++))
     fi
 }
@@ -117,6 +135,7 @@ check_configs() {
         fi
     else
         print_error "hostapd.conf does NOT exist"
+        print_info "Run: ./2_configure_services.sh"
         ((ERRORS++))
     fi
     
@@ -132,6 +151,7 @@ check_configs() {
         fi
     else
         print_error "dnsmasq.conf does NOT exist"
+        print_info "Run: ./2_configure_services.sh"
         ((ERRORS++))
     fi
 }
@@ -152,7 +172,7 @@ check_network() {
         fi
         
         # Check if IP is configured
-        if ip addr show $INTERFACE | grep -q "$GATEWAY_IP"; then
+        if ip addr show $INTERFACE 2>/dev/null | grep -q "$GATEWAY_IP"; then
             print_status "Interface has correct IP: $GATEWAY_IP"
         else
             print_warning "Interface does not have IP $GATEWAY_IP (will be configured when running)"
@@ -160,6 +180,8 @@ check_network() {
         fi
     else
         print_error "Interface $INTERFACE does NOT exist"
+        print_info "Available interfaces:"
+        ip link show | grep -E "^[0-9]+:" | awk '{print "  - " $2}' | sed 's/:$//'
         ((ERRORS++))
     fi
 }
@@ -212,13 +234,13 @@ check_services() {
     fi
     
     # Check if services are currently running
-    if systemctl is-active --quiet hostapd; then
+    if systemctl is-active --quiet hostapd 2>/dev/null; then
         print_info "hostapd is currently RUNNING"
     else
         print_info "hostapd is currently STOPPED"
     fi
     
-    if systemctl is-active --quiet dnsmasq; then
+    if systemctl is-active --quiet dnsmasq 2>/dev/null; then
         print_info "dnsmasq is currently RUNNING"
     else
         print_info "dnsmasq is currently STOPPED"
@@ -260,6 +282,7 @@ show_summary() {
         echo -e "${YELLOW}Suggested actions:${NC}"
         echo -e "  1. Run ${YELLOW}./1_install_dependencies.sh${NC} if packages are missing"
         echo -e "  2. Run ${YELLOW}./2_configure_services.sh${NC} if configs are missing"
+        echo -e "  3. Check that you're in the correct directory: $SCRIPT_DIR"
         return 1
     fi
 }

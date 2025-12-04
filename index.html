@@ -8,6 +8,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <script>
+        // Redirect direct file requests to raw GitHub content
+        (function() {
+            const path = window.location.pathname;
+            
+            // Skip if we're at root or if path ends with /
+            if (path === '/' || path === '/index.html' || path.endsWith('/')) {
+                return;
+            }
+            
+            // Check if the path looks like a file (has an extension)
+            const lastSegment = path.split('/').pop();
+            const hasExtension = lastSegment.includes('.') && !lastSegment.startsWith('.');
+            
+            if (hasExtension) {
+                // Redirect to raw GitHub content
+                const REPO = "panik-144/panik-144.github.io";
+                const BRANCH = "main";
+                const rawUrl = `https://raw.githubusercontent.com/${REPO}/${BRANCH}${path}`;
+                window.location.replace(rawUrl);
+            }
+        })();
+    </script>
+    
     <style>
         :root {
             --gb-body: #c0c0c0;

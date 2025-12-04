@@ -37,12 +37,23 @@ print_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
 }
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Configure network interface
 configure_network() {
     print_status "Configuring network interface..."
     
+    # Check if interface exists
+    if ! ip link show $INTERFACE &> /dev/null; then
+        print_error "Interface $INTERFACE does not exist!"
+        print_status "Available interfaces:"
+        ip link show | grep -E "^[0-9]+:" | awk '{print $2}' | sed 's/://'
+        return 1
+    fi
+    
     # Bring down the interface
-    ip link set dev $INTERFACE down
+    ip link set dev $INTERFACE down 2>/dev/null || true
     
     # Set interface up
     ip link set dev $INTERFACE up
@@ -53,6 +64,7 @@ configure_network() {
     ip link set dev $INTERFACE up
     
     print_status "Network interface configured with IP $GATEWAY_IP"
+    return 0
 }
 
 # Configure iptables
@@ -93,6 +105,7 @@ configure_iptables() {
     # iptables -t nat -A POSTROUTING -o $ETHERNET -j MASQUERADE
     
     print_status "iptables configured"
+    return 0
 }
 
 # Start services
@@ -103,7 +116,7 @@ start_services() {
     systemctl start dnsmasq
     
     # Start hostapd
-    systemctl unmask hostapd
+    systemctl unmask hostapd 2>/dev/null || true
     systemctl start hostapd
     
     sleep 2
@@ -134,28 +147,44 @@ start_services() {
 start_flask() {
     print_status "Starting Flask application..."
     
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    print_status "Script directory: $SCRIPT_DIR"
     
     # Kill any existing Flask processes
-    pkill -f "app.py"
+    pkill -f "app.py" 2>/dev/null || true
     sleep 1
     
     # Check if venv exists
     if [ ! -d "$SCRIPT_DIR/.venv" ]; then
-        print_error "Virtual environment not found!"
+        print_error "Virtual environment not found at $SCRIPT_DIR/.venv"
         print_error "Please run ./1_install_dependencies.sh first"
         return 1
     fi
     
+    # Find the actual python binary
+    PYTHON_BIN=""
+    if [ -f "$SCRIPT_DIR/.venv/bin/python3" ]; then
+        PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python3"
+    elif [ -f "$SCRIPT_DIR/.venv/bin/python" ]; then
+        PYTHON_BIN="$SCRIPT_DIR/.venv/bin/python"
+    fi
+    
+    if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
+        print_error "Python binary not found in virtual environment"
+        print_error "Searched: $SCRIPT_DIR/.venv/bin/python3 and $SCRIPT_DIR/.venv/bin/python"
+        return 1
+    fi
+    
+    print_status "Using Python: $PYTHON_BIN"
+    
     # Check if app.py exists
     if [ ! -f "$SCRIPT_DIR/app.py" ]; then
-        print_error "app.py not found!"
+        print_error "app.py not found in $SCRIPT_DIR"
         return 1
     fi
     
     # Start Flask in background
     cd "$SCRIPT_DIR"
-    nohup .venv/bin/python3 app.py > flask.log 2>&1 &
+    nohup "$PYTHON_BIN" app.py > flask.log 2>&1 &
     
     sleep 3
     
@@ -198,19 +227,19 @@ cleanup() {
     echo ""
     print_warning "Stopping services..."
     
-    systemctl stop hostapd
-    systemctl stop dnsmasq
-    pkill -f "app.py"
+    systemctl stop hostapd 2>/dev/null || true
+    systemctl stop dnsmasq 2>/dev/null || true
+    pkill -f "app.py" 2>/dev/null || true
     
     # Restore network
-    ip addr flush dev $INTERFACE
-    systemctl start NetworkManager
+    ip addr flush dev $INTERFACE 2>/dev/null || true
+    systemctl start NetworkManager 2>/dev/null || true
     
     # Flush iptables
-    iptables -F
-    iptables -t nat -F
-    iptables -t mangle -F
-    iptables -X
+    iptables -F 2>/dev/null || true
+    iptables -t nat -F 2>/dev/null || true
+    iptables -t mangle -F 2>/dev/null || true
+    iptables -X 2>/dev/null || true
     
     print_status "Cleanup complete"
     exit 0
@@ -228,6 +257,8 @@ main() {
     echo "╚═══════════════════════════════════════╝"
     echo -e "${NC}"
     
+    print_status "Working directory: $SCRIPT_DIR"
+    
     # Check if configuration exists
     if [ ! -f /etc/hostapd/hostapd.conf ] || [ ! -f /etc/dnsmasq.conf ]; then
         print_error "Configuration files not found!"
@@ -235,7 +266,12 @@ main() {
         exit 1
     fi
     
-    configure_network
+    if ! configure_network; then
+        print_error "Failed to configure network"
+        cleanup
+        exit 1
+    fi
+    
     configure_iptables
     
     if ! start_services; then

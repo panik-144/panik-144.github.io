@@ -42,6 +42,9 @@ print_warning() {
 configure_hostapd() {
     print_status "Configuring hostapd..."
     
+    # Create directory if it doesn't exist
+    mkdir -p /etc/hostapd
+    
     cat <<EOF > /etc/hostapd/hostapd.conf
 interface=$INTERFACE
 driver=nl80211
@@ -55,8 +58,11 @@ ignore_broadcast_ssid=0
 wpa=0
 EOF
     
-    # Set the config file location
-    sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
+    # Set the config file location (handle both systemd and init.d)
+    if [ -f /etc/default/hostapd ]; then
+        sed -i 's|#DAEMON_CONF=""|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+        sed -i 's|DAEMON_CONF=".*"|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd 2>/dev/null || true
+    fi
     
     print_status "hostapd configured"
 }
@@ -105,10 +111,18 @@ EOF
 configure_network() {
     print_status "Configuring network interface..."
     
-    # Bring down the interface
-    ip link set dev $INTERFACE down
+    # Check if interface exists
+    if ! ip link show $INTERFACE &> /dev/null; then
+        print_error "Interface $INTERFACE does not exist!"
+        print_status "Available interfaces:"
+        ip link show | grep -E "^[0-9]+:" | awk '{print $2}' | sed 's/://'
+        exit 1
+    fi
     
-    # Set interface to monitor mode first, then managed
+    # Bring down the interface
+    ip link set dev $INTERFACE down 2>/dev/null || true
+    
+    # Set interface up
     ip link set dev $INTERFACE up
     
     # Assign static IP
@@ -125,7 +139,21 @@ configure_iptables() {
     
     # Enable IP forwarding
     echo 1 > /proc/sys/net/ipv4/ip_forward
-    sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+    
+    # Make IP forwarding persistent (handle missing sysctl.conf)
+    if [ -f /etc/sysctl.conf ]; then
+        if grep -q "net.ipv4.ip_forward" /etc/sysctl.conf; then
+            sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+            sed -i 's/net.ipv4.ip_forward=0/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+        else
+            echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+        fi
+    else
+        # Create sysctl.conf if it doesn't exist
+        print_warning "/etc/sysctl.conf not found, creating it..."
+        mkdir -p /etc
+        echo "net.ipv4.ip_forward=1" > /etc/sysctl.conf
+    fi
     
     # Flush existing rules
     iptables -F
@@ -171,9 +199,9 @@ configure_iptables() {
 enable_services() {
     print_status "Enabling services to start on boot..."
     
-    systemctl unmask hostapd
-    systemctl enable hostapd
-    systemctl enable dnsmasq
+    systemctl unmask hostapd 2>/dev/null || true
+    systemctl enable hostapd 2>/dev/null || true
+    systemctl enable dnsmasq 2>/dev/null || true
     
     print_status "Services enabled"
 }
